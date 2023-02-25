@@ -1,16 +1,18 @@
 # simple_photogrammetry_gui
 
-A new Flutter project.
+## Usage:
 
-## Getting Started
+TBD
 
-This project is a starting point for a Flutter application.
+## Building:
 
-A few resources to get you started if this is your first Flutter project:
+### Windows:
+    ```
+    git clone https://github.com/edin45/simple_photogrammetry_gui.git
+    cd simple_photogrammetry_gui
+    flutter clean
+    flutter pub get
+    flutter build windows --release
+    ```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+    then in the build/windows/runner/Release put your desired version of openmvs as a zip file called openmvs.zip
