@@ -27,16 +27,25 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
   bool isDownloadingDependencies = false;
   bool useGpu = true;
   bool stop = false;
+  bool reconstructAndTextureMesh = false;
 
   String status = "";
+
+  bool hasAllDependencies = false;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    // compute(widget.model.ramUsageWatcher,0);
+
     Isolate.spawn(widget.model.ramUsageWatcher, 0);
-    // widget.model.ramUsageWatcher(this);
+
+    asyncTasks() async {
+      hasAllDependencies = await widget.model.checkDependencies(this);
+      setState(() {});
+    }
+    asyncTasks();
+    
   }
 
   @override
@@ -86,6 +95,32 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                         const Padding(padding: EdgeInsets.all(5)),
                         Text(
                           'Use GPU when possible',
+                          style: TextStyle(color: colorScheme.onBackground, fontWeight: FontWeight.normal),
+                        )
+                      ],
+                    ),
+                    const Padding(padding: EdgeInsets.all(8)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        RoundCheckBox(
+                          size: 30,
+                          isChecked: reconstructAndTextureMesh,
+                          checkedColor: colorScheme.primary,
+                          disabledColor: colorScheme.background,
+                          uncheckedColor: colorScheme.background,
+                          checkedWidget: Icon(
+                            Icons.check,
+                            color: colorScheme.onPrimary,
+                          ),
+                          onTap: (selected) {
+                            reconstructAndTextureMesh = selected ?? false;
+                            setState(() {});
+                          },
+                        ),
+                        const Padding(padding: EdgeInsets.all(5)),
+                        Text(
+                          'Reconstruct & Texture Mesh (High memory usage)',
                           style: TextStyle(color: colorScheme.onBackground, fontWeight: FontWeight.normal),
                         )
                       ],
@@ -189,6 +224,9 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                               widget.model.startScanningProcess(this, imageFolder, outputFolder);
                             }
                           },
+                          //  : () {
+                          //   widget.model.startScanningProcess(this, imageFolder, outputFolder);
+                          // },
                           style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
                             if (states.contains(MaterialState.pressed)) {
                               return colorScheme.primaryContainer;
@@ -196,7 +234,9 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                             return colorScheme.primary;
                           })),
                           child: Text(
+                            // hasAllDependencies ? 
                             'Start',
+                            //  : "Install Dependencies (Needs Adminstrator rights)",
                             style: TextStyle(color: colorScheme.onPrimary),
                           ),
                         ),
@@ -254,6 +294,7 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                               children: [
                                 linkWidget("1. Colmap", "https://colmap.github.io/"),
                                 linkWidget("2. OpenMVS", "https://github.com/cdcseacave/openMVS"),
+                                linkWidget("3. pointcloudToMesh", "https://github.com/danielTobon43/pointcloudToMesh"),
                               ],
                             ),
                           );

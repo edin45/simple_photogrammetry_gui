@@ -1,8 +1,4 @@
-import 'dart:ffi';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:simple_photogrammetry_gui/colors.dart';
 import 'package:simple_photogrammetry_gui/scanningScreen/scanningScreenModel.dart';
 import 'package:simple_photogrammetry_gui/scanningScreen/scanningScreenView.dart';
 
