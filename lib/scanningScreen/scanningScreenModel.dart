@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:process_run/shell.dart';
 
 import 'package:flutter/material.dart';
+import 'package:isolate_current_directory/isolate_current_directory.dart';
 import 'package:simple_photogrammetry_gui/runCommand.dart';
 import 'package:system_info2/system_info2.dart';
 
@@ -41,16 +44,16 @@ class ScanningScreenModel {
 
   startScanningProcess(var view, String imagesPath, String outputPath) async {
     if ((await checkDependencies(view))) {
-      // "C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap${slash}colmap${slash}COLMAP.bat"
       String colmapPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap${slash}colmap${slash}COLMAP.bat' : 'colmap';
-      String openMvsPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}openMVS${slash}' : '';
-      String outlierRemovalPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : '';
+      String openMvsPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}openMVS${slash}' : './openMVS/';
+      String texReconPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './';
+      String decimateMeshPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './';
+      
       
       String databasePath = "$outputPath${slash}temp${slash}database.db";
-      int totalStepNumber = 11;
-      if(!view.reconstructAndTextureMesh) {
-        totalStepNumber=8;
-      }
+      int totalStepNumber = 10;
+
+      var shell = Shell();
 
       if(Platform.isWindows) {
 
@@ -62,11 +65,47 @@ class ScanningScreenModel {
       
       }else{
 
-        await runCommand("mkdir $outputPath/temp", []);
-        await runCommand("mkdir $outputPath/temp/sparse", []);
-        await runCommand("mkdir $outputPath/temp/dense", []);
-        await runCommand("mkdir $outputPath/temp/dense/sparse", []);
-        await runCommand("touch $outputPath/temp/database.db", []);
+        
+
+        try{
+
+        await shell.run('''
+        mkdir $outputPath/temp
+        ''');
+
+        }catch(e) {}
+
+        try{
+
+        await shell.run('''
+        mkdir $outputPath/temp/sparse
+        ''');
+
+        }catch(e) {}
+
+        try{
+
+        await shell.run('''
+        mkdir $outputPath/temp/dense
+        ''');
+
+        }catch(e) {}
+
+        try{
+
+        await shell.run('''
+        mkdir $outputPath/temp/dense/sparse
+        ''');
+
+        }catch(e) {}
+
+        try{
+
+          await shell.run('''
+          touch $outputPath/temp/database.db
+          ''');
+
+        }catch(e) {}
 
       }
 
@@ -120,10 +159,9 @@ class ScanningScreenModel {
         return;
       }
 
-      view.status = "5.2/$totalStepNumber Converting Project";
-      view.setState(() {});
-      print("\"$colmapPath\" model_converter --input_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_path \"$imagesPath\" --output_type Bundler");
-      await runCommand("\"$colmapPath\" model_converter --input_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_path \"$imagesPath\" --output_type Bundler", []);
+       view.status = "5.2/$totalStepNumber Converting Project";
+       view.setState(() {});
+       await runCommand("\"$colmapPath\" model_converter --input_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_path \"$imagesPath\" --output_type CAM", []);
 
       if (view.stop) {
         stop(view);
@@ -139,8 +177,8 @@ class ScanningScreenModel {
         return;
       }
 
-      int max_img_resolution = 2560;
-      int dense_retrys = 1;
+      int maxImgResolution = 2560;
+      int denseRetrys = 1;
 
       await runCommand('powershell -c "del \'$outputPath${slash}temp${slash}model_dense.mvs\'"', []);
 
@@ -150,13 +188,13 @@ class ScanningScreenModel {
           return;
         }
 
-        print("max_img_resolution: ${max_img_resolution}");
+        print("max_img_resolution: ${maxImgResolution}");
 
-        if (dense_retrys == 1) {
+        if (denseRetrys == 1) {
           view.status = "7/$totalStepNumber Densifying Point Cloud";
           view.setState(() {});
         } else {
-          view.status = "7/$totalStepNumber Densifying Point Cloud failed, retrying with a max image resolution of $max_img_resolution";
+          view.status = "7/$totalStepNumber Densifying Point Cloud failed, retrying with a max image resolution of $maxImgResolution";
         }
         view.setState(() {});
 
@@ -166,16 +204,14 @@ class ScanningScreenModel {
         
         }
 
-        // print("\"${openMvsPath}DensifyPointCloud\" --input-file \"$outputPath${slash}temp${slash}model_colmap.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_dense.mvs\"");
-
-        await runCommand("\"${openMvsPath}DensifyPointCloud\" --input-file \"$outputPath${slash}temp${slash}model_colmap.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --max-resolution $max_img_resolution", []);
-        if(dense_retrys == 5) {
+        await runCommand("\"${openMvsPath}DensifyPointCloud\" --input-file \"$outputPath${slash}temp${slash}model_colmap.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --max-resolution $maxImgResolution", []);
+        if(denseRetrys == 5) {
           view.status = "Failed, went wrong at DensifyPointCloud";
           view.setState(() {});
           return;
         }
-        dense_retrys++;
-        max_img_resolution = (max_img_resolution*0.7).floor();
+        denseRetrys++;
+        maxImgResolution = (maxImgResolution*0.7).floor();
       }
 
       if (view.stop) {
@@ -183,19 +219,7 @@ class ScanningScreenModel {
         return;
       }
 
-      view.status = "8/$totalStepNumber Removing Outliers";
-      view.setState(() {});
-
-      await runCommand("\"${outlierRemovalPath}removeOutliers\" -i \"$outputPath${slash}temp${slash}model_dense.ply\" -o \"$outputPath\"", []);
-      
-      if(view.reconstructAndTextureMesh) {
-
-        if (view.stop) {
-          stop(view);
-          return;
-        }
-
-        double decimationFactorMeshRecon = 1;
+      double decimationFactorMeshRecon = 1;
         int meshReconRetrys = 1;
         
         while (!File("$outputPath${slash}temp${slash}model_surface.mvs").existsSync()) {
@@ -210,7 +234,7 @@ class ScanningScreenModel {
           view.setState(() {});
         }
 
-        await runCommand("\"${openMvsPath}ReconstructMesh\" --input-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_surface.mvs\" -d $meshReconRetrys", []);
+        await runCommand("\"${openMvsPath}ReconstructMesh\" --input-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_surface.mvs\" -d ${(2.5+(double.parse(meshReconRetrys.toString())/2)).toString()}  --integrate-only-roi 1 --smooth 1", []);
         decimationFactorMeshRecon=decimationFactorMeshRecon*0.7;
 
         if(meshReconRetrys == 10) {
@@ -221,67 +245,50 @@ class ScanningScreenModel {
         meshReconRetrys++;
 
         }
+      
+      if (view.stop) {
+        stop(view);
+        return;
+      }
 
-        if (view.stop) {
-          stop(view);
+      view.status = "10/$totalStepNumber Texturing Mesh";
+      view.setState(() {});
+
+      int texreconRetrys = 1;
+
+      while(!File("$outputPath${slash}textured.obj").existsSync()) {
+
+        if(texreconRetrys > 1) {
+          view.status = "10/$totalStepNumber Texturing Mesh, failed retrying with decimation-factor: ${1+((texreconRetrys-1)/2)}";
+          view.setState(() {});
+          // await runCommand("\"${resizeImagesPath}resizeImages\" -i \"${imagesPath}\" -r ${texrecon_retrys*0.7}", []);
+          await runCommand("\"${decimateMeshPath}decimateMesh\" -m \"$outputPath${slash}temp${slash}model_surface.ply\" -o \"$outputPath${slash}temp\" -t ${1+((texreconRetrys-1)/2)}", []);
+        }
+
+        print('working folder: $imagesPath');
+
+        await Process.run('"${texReconPath}texrecon" .${slash} "$outputPath${slash}temp${slash}model_surface${texreconRetrys > 1 ? "_decimated" : ""}.ply" "${outputPath}${slash}textured"',[],workingDirectory: texreconRetrys > 1 && false ? "${imagesPath}${slash}downres" : imagesPath).then((ProcessResult results) {
+          String err = results.stderr.toString();
+          print('err: $err');
+          if (err.contains('Permission denied') || err.contains("PermissionDenied")) {
+            err = "permission_denied";
+          }
+          print('command_out: ${results.stdout}');
+          return err;
+        });
+
+        if(texreconRetrys == 6){
+          view.status = "Failed, went wrong at texturing mesh";
+          view.setState(() {});
           return;
         }
 
-        double decimationFactor = 0;
-        int imgScaleDownFactor = 0;
-        bool useDecimationFactor = false;
-
-        while (!File("$outputPath${slash}temp${slash}model_surface_refined.mvs").existsSync()) {
-          if (view.stop) {
-            stop(view);
-            return;
-          }
-
-          if (decimationFactor == 0) {
-            view.status = "10/$totalStepNumber Refining Mesh";
-            view.setState(() {});
-          } else {
-            view.status = "10/$totalStepNumber Refining Mesh failed, retrying with image scale-down factor $imgScaleDownFactor, and decimation factor $decimationFactor";
-            view.setState(() {});
-          }
-
-          await runCommand("\"${openMvsPath}RefineMesh\" --input-file \"$outputPath${slash}temp${slash}model_surface.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_surface_refined.mvs\" --reduce-memory 1 --decimate $decimationFactor --resolution-level $imgScaleDownFactor", []);
-
-          imgScaleDownFactor++;
-
-          if (useDecimationFactor) {
-            decimationFactor-=0.1;
-          }
-
-          if (imgScaleDownFactor == 5 && useDecimationFactor == false) {
-            imgScaleDownFactor = 0;
-            decimationFactor = 0.9;
-            useDecimationFactor = true;
-            continue;
-          }
-
-          if (imgScaleDownFactor == 5 && useDecimationFactor) {
-            view.status = "Failed, went wrong at RefineMesh";
-            view.setState(() {});
-            return;
-          }
-        }
-
-        if (view.stop) {
-          stop(view);
-          return;
-        }
-
-        view.status = "11/$totalStepNumber Texturing Mesh";
-        view.setState(() {});
-        await runCommand("\"${openMvsPath}TextureMesh\" --input-file \"$outputPath${slash}temp${slash}model_surface_refined.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}textured.mvs\" --export-type obj", []);
+        texreconRetrys++;
 
       }
 
       view.status = "Done";
       view.setState(() {});
-      // await runCommand("\"$colmapPath\" feature_extractor exhaustive_matcher --SiftMatching.use_gpu 0 --database_path \"$outputPath${slash}temp${slash}database.db\"", []);
-      //colmap mapper --database_path $outputPath${slash}temp${slash}database.db --image_path $imagesPath --output_path $PROJECT/sparse
     }
   }
 
@@ -299,6 +306,8 @@ class ScanningScreenModel {
           runCommand('taskkill /IM "ReconstructMesh.exe" /F', []);
           runCommand('taskkill /IM "DensifyPointCloud.exe" /F', []);
           runCommand('taskkill /IM "COLMAP.bat" /F', []);
+          runCommand('taskkill /IM "reconstructMesh.exe" /F', []);
+          runCommand('taskkill /IM "texrecon.exe" /F', []);
         }else{
           runCommand('killall RefineMesh', []);
           runCommand('killall TextureMesh', []);
@@ -320,15 +329,26 @@ class ScanningScreenModel {
     if (Platform.isWindows) {
       bool hasColmap = await Directory("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap").exists();
       bool hasOpenMVS = await Directory("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}openMVS").exists();
-      bool hasRemoveOutliers = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}removeOutliers.exe").exists();
+      // bool hasRemoveOutliers = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}removeOutliers.exe").exists();
+      // bool hasReconstructMesh = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}reconstructMesh.exe").exists();
+      bool hasTexRecon = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}texrecon.exe").exists();
+      bool hasResizeImages = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}resizeImages.exe").exists();
+      bool hasDecimateMesh = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}decimateMesh.exe").exists();
 
-      hasAllDependencies = hasColmap && hasOpenMVS && hasRemoveOutliers;
+      hasAllDependencies = hasColmap && hasOpenMVS && hasTexRecon && hasResizeImages && hasDecimateMesh;
     }
     else if (Platform.isLinux) {
 
-      bool hasColmap = (await runCommand('colmap',[])).toString().trim() != "";
-      bool hasOpenMVS = (await runCommand('DensifyPointCloud',[])).toString().trim() != "";//ile("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}openMVS").existsSync();
-      hasAllDependencies = hasColmap && hasOpenMVS;
+      
+
+      bool hasColmap = (await runCommand('colmap',[])).toString().trim().contains("COLMAP");
+      
+      // bool hasOpenMVS = await Directory("~/.simple_photogrammetry_gui_dependencies/openMVS").exists();
+      // bool hasRemoveOutliers = await File("~/.simple_photogrammetry_gui_dependencies/removeOutliers").exists();
+      // bool hasReconstructMesh = await File("~/.simple_photogrammetry_gui_dependencies/reconstructMesh").exists();
+      // bool hasTexRecon = await File("~/.simple_photogrammetry_gui_dependencies/texrecon").exists();
+      
+      hasAllDependencies = hasColmap;// && hasOpenMVS && hasRemoveOutliers && hasReconstructMesh && hasTexRecon;
 
     }
     if (!hasAllDependencies) {
@@ -337,7 +357,7 @@ class ScanningScreenModel {
           view.context,
           "Some dependencies are missing, download them now?",
           [
-            TextButton(
+            Platform.isLinux ? Container() : TextButton(
                 onPressed: () async {
                   Navigator.pop(view.context);
 
@@ -366,7 +386,7 @@ class ScanningScreenModel {
                   view.setState(() {});
                 },
                 child: Text(
-                  "Yes (No CUDA)",
+                  "Yes${Platform.isLinux ? "" : " (No CUDA)"}",
                   style: TextStyle(color: view.colorScheme.onBackground, fontSize: 18),
                 )),
             TextButton(
@@ -400,7 +420,11 @@ class ScanningScreenModel {
         return;
       }
 
-      await runCommand('powershell -c "Expand-Archive -Path ./removeOutliers.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui\'"', []);
+      await runCommand('powershell -c "Expand-Archive -Path ./decimateMesh.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui\'"', []);
+
+      await runCommand('powershell -c "Expand-Archive -Path ./resizeImages.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui\'"', []);
+
+      await runCommand('powershell -c "Expand-Archive -Path ./texrecon.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui\'"', []);
 
       await runCommand('powershell -c "Rename-Item -Path \'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap${slash}${cuda ? 'COLMAP-3.7-windows-cuda' : 'COLMAP-3.7-windows-no-cuda'}\' -NewName \'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap${slash}colmap\'"', []);
 
@@ -411,6 +435,12 @@ class ScanningScreenModel {
         permissionErrorAlert(view);
         return;
       }
+      // ~/.simple_photogrammetry_gui_dependencies/
+      // await runCommand('mkdir ~/.simple_photogrammetry_gui_dependencies', []);
+      // await runCommand('cp ./removeOutliers ~/.simple_photogrammetry_gui_dependencies/', []);
+      // await runCommand('cp ./reconstructMesh ~/.simple_photogrammetry_gui_dependencies/', []);
+      // await runCommand('cp ./texrecon ~/.simple_photogrammetry_gui_dependencies/', []);
+      // await runCommand('cp ./openMVS ~/.simple_photogrammetry_gui_dependencies/', []);
 
     }
   }

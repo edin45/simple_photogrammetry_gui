@@ -99,7 +99,7 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                         )
                       ],
                     ),
-                    const Padding(padding: EdgeInsets.all(8)),
+                    /*const Padding(padding: EdgeInsets.all(8)),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -114,7 +114,7 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                             color: colorScheme.onPrimary,
                           ),
                           onTap: (selected) {
-                            reconstructAndTextureMesh = selected ?? false;
+                            reconstructAndTextureMesh = (selected ?? false);
                             setState(() {});
                           },
                         ),
@@ -124,7 +124,7 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                           style: TextStyle(color: colorScheme.onBackground, fontWeight: FontWeight.normal),
                         )
                       ],
-                    ),
+                    ),*/
                     const Padding(padding: EdgeInsets.all(10.0)),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -294,7 +294,8 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                               children: [
                                 linkWidget("1. Colmap", "https://colmap.github.io/"),
                                 linkWidget("2. OpenMVS", "https://github.com/cdcseacave/openMVS"),
-                                linkWidget("3. pointcloudToMesh", "https://github.com/danielTobon43/pointcloudToMesh"),
+                                linkWidget("3. mvs-texturing", "https://github.com/nmoehrle/mvs-texturing"),
+                                linkWidget("4. pymeshlab", "https://github.com/cnr-isti-vclab/PyMeshLab"),
                               ],
                             ),
                           );

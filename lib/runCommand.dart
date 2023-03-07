@@ -8,6 +8,6 @@ runCommand(String command, List<String> attr) async {
       err = "permission_denied";
     }
     print('command_out: ${results.stdout}');
-    return err;
+    return err == "" ? results.stdout : err;
   });
 }

@@ -42,6 +42,7 @@ dependencies:
   roundcheckbox: ^2.0.5
   system_info2: ^3.0.1
   url_launcher: ^6.1.10
+  isolate_current_directory: ^1.2.0
 
 dev_dependencies:
   flutter_test:
@@ -55,6 +56,7 @@ dev_dependencies:
   flutter_lints: ^2.0.0
   dynamic_color: ^1.6.2
   file_picker: ^5.2.5
+  process_run: ^0.12.5+2
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
