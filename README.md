@@ -29,7 +29,10 @@ Lastly, click start. The finished result will be in the output folder with the n
     flutter build windows --release
     ```
 
-    then in the build/windows/runner/Release put your desired (compiled!) version of openmvs as a zip file called openmvs.zip (zip the contents of the folder not the folder itself, or it will not work), along with zip files of:
-    - decimateMesh.exe (compiled from python/decimateMesh.py using command: pyinstaller --onefile decimateMesh.py --collect-all pymeshlab)
-    - resizeImages.exe (compiled from python/resizeImages.py using command: pyinstaller --onefile resizeImages.py)
-    - texrecon.exe (is in the folder mvs-texturing)
+   then alongside the simple_photogrammetry_gui.exe (in the build/windows/runner/Release folder) put your desired (compiled!) version of openmvs as a zip file called openmvs.zip (zip the contents of the folder not the folder itself, or it will not work).
+   
+   Along with zip files of:
+  
+   - decimateMesh.exe (compiled from python/decimateMesh.py using command: pyinstaller --onefile decimateMesh.py --collect-all pymeshlab)
+   - resizeImages.exe (compiled from python/resizeImages.py using command: pyinstaller --onefile resizeImages.py)
+   - texrecon.exe (is in the folder mvs-texturing)
