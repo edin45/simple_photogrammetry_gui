@@ -4,11 +4,17 @@
 
 When first opening, open the application as adminstrator, since it needs the adminstrator rights to install all dependencies.
 
+![alt text](https://raw.githubusercontent.com/edin45/simple_photogrammetry_gui/master/readme_imgs/run_as_adminstrator.jpg)
+
 Click on the Install option you'd like to use, click "Install (Cuda)" if you have a nvidia gpu and if not click "Install (No Cuda)"
+
+![alt text](https://raw.githubusercontent.com/edin45/simple_photogrammetry_gui/master/readme_imgs/install_dependencies.jpg)
 
 Once the dependencies finished installing click "Select Image Folder" to select the folder containing the images
 
 then click "Select Output Folder" to select the folder where the result should be stored (There should be plenty of disk space in the loaction of the output folder).
+
+![alt text](https://raw.githubusercontent.com/edin45/simple_photogrammetry_gui/master/readme_imgs/scanning_screen.jpg)
 
 lastly click start, the finished result will be in the output folder with the name: "textured.obj"
 
