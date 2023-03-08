@@ -2,15 +2,21 @@
 
 ## Usage:
 
-When first opening, open the application as adminstrator, since it needs the adminstrator rights to install all dependencies.
+When first opening, open the application as administrator since it needs administrator rights to install all dependencies.
 
-Click on the Install option you'd like to use, click "Install (Cuda)" if you have a nvidia gpu and if not click "Install (No Cuda)"
+![alt text](https://raw.githubusercontent.com/edin45/simple_photogrammetry_gui/master/readme_imgs/run_as_adminstrator.jpg)
 
-Once the dependencies finished installing click "Select Image Folder" to select the folder containing the images
+Click on the Install option you'd like to use, click **Install (Cuda)** if you have an Nvidia GPU, and if not, click **Install (No Cuda)**.
 
-then click "Select Output Folder" to select the folder where the result should be stored (There should be plenty of disk space in the loaction of the output folder).
+![alt text](https://raw.githubusercontent.com/edin45/simple_photogrammetry_gui/master/readme_imgs/install_dependencies.jpg)
 
-lastly click start, the finished result will be in the output folder with the name: "textured.obj"
+Once the dependencies finish installing, click "Select Image Folder" to select the folder containing the images.
+
+Then click **Select Output Folder** to select the folder where the result should be stored (There should be plenty of disk space in the location of the output folder).
+
+![alt text](https://raw.githubusercontent.com/edin45/simple_photogrammetry_gui/master/readme_imgs/scanning_screen.jpg)
+
+Lastly, click start. The finished result will be in the output folder with the name: **textured.obj**
 
 ## Building:
 
@@ -23,4 +29,10 @@ lastly click start, the finished result will be in the output folder with the na
     flutter build windows --release
     ```
 
-    then in the build/windows/runner/Release put your desired version of openmvs as a zip file called openmvs.zip
+   then alongside the simple_photogrammetry_gui.exe (in the build/windows/runner/Release folder) put your desired (compiled!) version of openmvs as a zip file called openmvs.zip (zip the contents of the folder not the folder itself, or it will not work).
+   
+   Along with zip files of:
+  
+   - decimateMesh.exe (compiled from python/decimateMesh.py using command: pyinstaller --onefile decimateMesh.py --collect-all pymeshlab)
+   - resizeImages.exe (compiled from python/resizeImages.py using command: pyinstaller --onefile resizeImages.py)
+   - texrecon.exe (is in the folder mvs-texturing)
