@@ -51,7 +51,7 @@ class ScanningScreenModel {
       
       
       String databasePath = "$outputPath${slash}temp${slash}database.db";
-      int totalStepNumber = 10;
+      int totalStepNumber = 11;
 
       var shell = Shell();
 
@@ -220,9 +220,9 @@ class ScanningScreenModel {
       }
 
       double decimationFactorMeshRecon = 1;
-        int meshReconRetrys = 1;
+      int meshReconRetrys = 1;
         
-        while (!File("$outputPath${slash}temp${slash}model_surface.mvs").existsSync()) {
+      while (!File("$outputPath${slash}temp${slash}model_surface.mvs").existsSync()) {
         
         if(decimationFactorMeshRecon == 1.0) {
 
@@ -244,14 +244,38 @@ class ScanningScreenModel {
         }
         meshReconRetrys++;
 
-        }
+      }
       
       if (view.stop) {
         stop(view);
         return;
       }
 
-      view.status = "10/$totalStepNumber Texturing Mesh";
+      view.status = "10/$totalStepNumber Refining Mesh";
+      view.setState(() {});
+
+      int refineModelRetrys = 1;
+
+      while (!File("$outputPath${slash}temp${slash}model_refined.mvs").existsSync()) {
+        
+        if(refineModelRetrys > 1) {
+          view.status = "10/$totalStepNumber Refining Mesh, failed, retrying (decimate: ${0.5+(refineModelRetrys/2)}, resolution-level: ${1+refineModelRetrys})";
+          view.setState(() {});
+        }
+
+        await runCommand("\"${openMvsPath}RefineMesh\" -i \"$outputPath${slash}temp${slash}model_surface.mvs\" -o \"$outputPath${slash}temp${slash}model_refined.mvs\" --decimate ${0.5+(refineModelRetrys/2)} --resolution-level ${1+refineModelRetrys} --working-folder \"$outputPath${slash}temp\"",[]);
+
+        if(refineModelRetrys == 20) {
+          view.status = "Failed, went wrong at refine mesh";
+          view.setState(() {});
+          return;
+        }
+
+        refineModelRetrys++;
+      
+      }
+
+      view.status = "11/$totalStepNumber Texturing Mesh";
       view.setState(() {});
 
       int texreconRetrys = 1;
@@ -259,15 +283,15 @@ class ScanningScreenModel {
       while(!File("$outputPath${slash}textured.obj").existsSync()) {
 
         if(texreconRetrys > 1) {
-          view.status = "10/$totalStepNumber Texturing Mesh, failed retrying with decimation-factor: ${1+((texreconRetrys-1)/2)}";
+          view.status = "11/$totalStepNumber Texturing Mesh, failed retrying with decimation-factor: ${1+((texreconRetrys-1)/2)}";
           view.setState(() {});
           // await runCommand("\"${resizeImagesPath}resizeImages\" -i \"${imagesPath}\" -r ${texrecon_retrys*0.7}", []);
-          await runCommand("\"${decimateMeshPath}decimateMesh\" -m \"$outputPath${slash}temp${slash}model_surface.ply\" -o \"$outputPath${slash}temp\" -t ${1+((texreconRetrys-1)/2)}", []);
+          await runCommand("\"${decimateMeshPath}decimateMesh\" -m \"$outputPath${slash}temp${slash}model_refined.ply\" -o \"$outputPath${slash}temp\" -t ${1+((texreconRetrys-1)/2)}", []);
         }
 
         print('working folder: $imagesPath');
 
-        await Process.run('"${texReconPath}texrecon" .${slash} "$outputPath${slash}temp${slash}model_surface${texreconRetrys > 1 ? "_decimated" : ""}.ply" "${outputPath}${slash}textured"',[],workingDirectory: texreconRetrys > 1 && false ? "${imagesPath}${slash}downres" : imagesPath).then((ProcessResult results) {
+        await Process.run('"${texReconPath}texrecon" .${slash} "$outputPath${slash}temp${slash}${texreconRetrys > 1 ? "model_surface_decimated" : "model_refined"}.ply" "${outputPath}${slash}textured"',[],workingDirectory: texreconRetrys > 1 && false ? "${imagesPath}${slash}downres" : imagesPath).then((ProcessResult results) {
           String err = results.stderr.toString();
           print('err: $err');
           if (err.contains('Permission denied') || err.contains("PermissionDenied")) {
