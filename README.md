@@ -40,5 +40,7 @@ Lastly, click start. The finished result will be in the output folder with the n
 ## Based on:
 
  OpenMVS: https://github.com/cdcseacave/openMVS
+ 
  Colmap: https://colmap.github.io/
+ 
  mvs-texturing: https://github.com/nmoehrle/mvs-texturing
