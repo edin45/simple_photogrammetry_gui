@@ -36,3 +36,9 @@ Lastly, click start. The finished result will be in the output folder with the n
    - decimateMesh.exe (compiled from python/decimateMesh.py using command: pyinstaller --onefile decimateMesh.py --collect-all pymeshlab)
    - resizeImages.exe (compiled from python/resizeImages.py using command: pyinstaller --onefile resizeImages.py)
    - texrecon.exe (is in the folder mvs-texturing)
+ 
+## Based on:
+
+    OpenMVS: https://github.com/cdcseacave/openMVS
+    Colmap: https://colmap.github.io/
+    mvs-texturing: https://github.com/nmoehrle/mvs-texturing
