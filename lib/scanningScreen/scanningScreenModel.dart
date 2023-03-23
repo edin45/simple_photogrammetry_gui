@@ -258,26 +258,23 @@ class ScanningScreenModel {
 
       while(!File("$outputPath${slash}textured.obj").existsSync()) {
 
+        if (view.stop) {
+        stop(view);
+        return;
+      }
+
         if(texreconRetrys > 1) {
-          view.status = "10/$totalStepNumber Texturing Mesh, failed retrying with decimation-factor: ${1+((texreconRetrys-1)/2)}";
+          view.status = "10/$totalStepNumber Texturing Mesh, failed retrying with decimation-factor: ${1/(1+((texreconRetrys-1)/6))} and resolution level ${(texreconRetrys-1)}";
           view.setState(() {});
           // await runCommand("\"${resizeImagesPath}resizeImages\" -i \"${imagesPath}\" -r ${texrecon_retrys*0.7}", []);
-          await runCommand("\"${decimateMeshPath}decimateMesh\" -m \"$outputPath${slash}temp${slash}model_surface.ply\" -o \"$outputPath${slash}temp\" -t ${1+((texreconRetrys-1)/2)}", []);
+          //await runCommand("\"${decimateMeshPath}decimateMesh\" -m \"$outputPath${slash}temp${slash}model_surface.ply\" -o \"$outputPath${slash}temp\" -t ${1+((texreconRetrys-1)/2)}", []);
         }
 
         print('working folder: $imagesPath');
 
-        await Process.run('"${texReconPath}texrecon" .${slash} "$outputPath${slash}temp${slash}model_surface${texreconRetrys > 1 ? "_decimated" : ""}.ply" "${outputPath}${slash}textured"',[],workingDirectory: texreconRetrys > 1 && false ? "${imagesPath}${slash}downres" : imagesPath).then((ProcessResult results) {
-          String err = results.stderr.toString();
-          print('err: $err');
-          if (err.contains('Permission denied') || err.contains("PermissionDenied")) {
-            err = "permission_denied";
-          }
-          print('command_out: ${results.stdout}');
-          return err;
-        });
+        await runCommand("\"${openMvsPath}TextureMesh\" --input-file \"$outputPath${slash}temp${slash}model_surface.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}textured.mvs\" --export-type obj --decimate ${1/(1+((texreconRetrys-1)/6))}  --resolution-level ${(texreconRetrys-1)}", []);
 
-        if(texreconRetrys == 6){
+        if(texreconRetrys == 8){
           view.status = "Failed, went wrong at texturing mesh";
           view.setState(() {});
           return;
@@ -286,6 +283,37 @@ class ScanningScreenModel {
         texreconRetrys++;
 
       }
+
+      // while(!File("$outputPath${slash}textured.obj").existsSync()) {
+
+      //   if(texreconRetrys > 1) {
+      //     view.status = "10/$totalStepNumber Texturing Mesh, failed retrying with decimation-factor: ${1+((texreconRetrys-1)/2)}";
+      //     view.setState(() {});
+      //     // await runCommand("\"${resizeImagesPath}resizeImages\" -i \"${imagesPath}\" -r ${texrecon_retrys*0.7}", []);
+      //     await runCommand("\"${decimateMeshPath}decimateMesh\" -m \"$outputPath${slash}temp${slash}model_surface.ply\" -o \"$outputPath${slash}temp\" -t ${1+((texreconRetrys-1)/2)}", []);
+      //   }
+
+      //   print('working folder: $imagesPath');
+
+      //   await Process.run('"${texReconPath}texrecon" .${slash} "$outputPath${slash}temp${slash}model_surface${texreconRetrys > 1 ? "_decimated" : ""}.ply" "${outputPath}${slash}textured"',[],workingDirectory: texreconRetrys > 1 && false ? "${imagesPath}${slash}downres" : imagesPath).then((ProcessResult results) {
+      //     String err = results.stderr.toString();
+      //     print('err: $err');
+      //     if (err.contains('Permission denied') || err.contains("PermissionDenied")) {
+      //       err = "permission_denied";
+      //     }
+      //     print('command_out: ${results.stdout}');
+      //     return err;
+      //   });
+
+      //   if(texreconRetrys == 6){
+      //     view.status = "Failed, went wrong at texturing mesh";
+      //     view.setState(() {});
+      //     return;
+      //   }
+
+      //   texreconRetrys++;
+
+      // }
 
       view.status = "Done";
       view.setState(() {});
@@ -409,9 +437,9 @@ class ScanningScreenModel {
         await runCommand('powershell -c "Invoke-WebRequest -OutFile colmap.zip -Uri https://github.com/colmap/colmap/releases/download/3.7/${cuda ? "COLMAP-3.7-windows-cuda.zip" : "COLMAP-3.7-windows-no-cuda.zip"}"', []);
       }
 
-      if (!File("./openmvs.zip").existsSync()) {
-        await runCommand('powershell -c "Invoke-WebRequest -OutFile openmvs.zip -Uri https://github.com/cdcseacave/openMVS/releases/download/v2.1.0/OpenMVS_Windows_x64.7z"', []);
-      }
+      // if (!File("./openmvs.zip").existsSync()) {
+      //   await runCommand('powershell -c "Invoke-WebRequest -OutFile openmvs.zip -Uri https://github.com/cdcseacave/openMVS/releases/download/v2.1.0/OpenMVS_Windows_x64.7z"', []);
+      // }
 
       String err = await runCommand('powershell -c "Expand-Archive -Path ./colmap.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap\'"', []);
 
@@ -427,6 +455,8 @@ class ScanningScreenModel {
       await runCommand('powershell -c "Expand-Archive -Path ./texrecon.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui\'"', []);
 
       await runCommand('powershell -c "Rename-Item -Path \'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap${slash}${cuda ? 'COLMAP-3.7-windows-cuda' : 'COLMAP-3.7-windows-no-cuda'}\' -NewName \'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap${slash}colmap\'"', []);
+
+      await runCommand('powershell -c "Rename-Item -Path ./${cuda ? 'openmvs_cuda.zip' : 'openmvs_no_cuda.zip'} -NewName ./openmvs.zip"', []);
 
       await runCommand('powershell -c "Expand-Archive -Path ./openmvs.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}openMVS\'"', []);
     } else if (Platform.isLinux) {
