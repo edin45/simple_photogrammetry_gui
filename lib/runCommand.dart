@@ -1,7 +1,7 @@
 import 'dart:io';
 
-runCommand(String command, List<String> attr) async {
-  return await Process.run(command, attr).then((ProcessResult results) {
+runCommand(String command, List<String> attr, {String? workingFolder}) async {
+  return await (workingFolder == null ? Process.run(command, attr) : Process.run(command, attr,workingDirectory: workingFolder)).then((ProcessResult results) {
     String err = results.stderr.toString();
     print('err: $err');
     if (err.contains('Permission denied') || err.contains("PermissionDenied")) {

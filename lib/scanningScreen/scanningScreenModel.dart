@@ -48,6 +48,7 @@ class ScanningScreenModel {
       String openMvsPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}openMVS${slash}' : './openMVS/';
       String texReconPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './';
       String decimateMeshPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './';
+      String textureMeshPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './';
       
       
       String databasePath = "$outputPath${slash}temp${slash}database.db";
@@ -161,7 +162,11 @@ class ScanningScreenModel {
 
        view.status = "5.2/$totalStepNumber Converting Project";
        view.setState(() {});
-       await runCommand("\"$colmapPath\" model_converter --input_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_path \"$imagesPath\" --output_type CAM", []);
+       await runCommand("\"$colmapPath\" model_converter --input_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_path \"$imagesPath${slash}project.nvm\" --output_type NVM", []);
+
+   //   //  view.status = "5.2/$totalStepNumber Converting Project";
+ //     //  view.setState(() {});
+   //   //  await runCommand("\"$colmapPath\" model_converter --input_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_path \"$imagesPath\" --output_type CAM", []);
 
       if (view.stop) {
         stop(view);
@@ -264,15 +269,15 @@ class ScanningScreenModel {
       }
 
         if(texreconRetrys > 1) {
-          view.status = "10/$totalStepNumber Texturing Mesh, failed retrying with decimation-factor: ${1/(1+((texreconRetrys-1)/6))} and resolution level ${(texreconRetrys-1)}";
+          view.status = "10/$totalStepNumber Texturing Mesh, ran out of memory retrying with lowered resolution (decimation-factor: ${1+((texreconRetrys-1)/2)})";
           view.setState(() {});
           // await runCommand("\"${resizeImagesPath}resizeImages\" -i \"${imagesPath}\" -r ${texrecon_retrys*0.7}", []);
-          //await runCommand("\"${decimateMeshPath}decimateMesh\" -m \"$outputPath${slash}temp${slash}model_surface.ply\" -o \"$outputPath${slash}temp\" -t ${1+((texreconRetrys-1)/2)}", []);
+          await runCommand("\"${decimateMeshPath}decimateMesh\" -m \"$outputPath${slash}temp${slash}model_surface.ply\" -o \"$outputPath${slash}temp\" -t ${1+((texreconRetrys-1)/2)}", []);
         }
 
-        print('working folder: $imagesPath');
+        await runCommand("${textureMeshPath}textureMesh -m ${texreconRetrys > 1 ? "\"$outputPath${slash}temp${slash}model_surface_decimated.ply\"" : "\"$outputPath${slash}temp${slash}model_surface.ply\""} -p \"$imagesPath${slash}project.nvm\" -o \"$outputPath\"", [],workingFolder: imagesPath);
 
-        await runCommand("\"${openMvsPath}TextureMesh\" --input-file \"$outputPath${slash}temp${slash}model_surface.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}textured.mvs\" --export-type obj --decimate ${1/(1+((texreconRetrys-1)/6))}  --resolution-level ${(texreconRetrys-1)}", []);
+        // await runCommand("\"${openMvsPath}TextureMesh\" --input-file \"$outputPath${slash}temp${slash}model_surface.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}textured.mvs\" --export-type obj --decimate ${1/(1+((texreconRetrys-1)/6))}  --resolution-level ${(texreconRetrys-1)}", []);
 
         if(texreconRetrys == 8){
           view.status = "Failed, went wrong at texturing mesh";
@@ -362,8 +367,9 @@ class ScanningScreenModel {
       bool hasTexRecon = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}texrecon.exe").exists();
       bool hasResizeImages = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}resizeImages.exe").exists();
       bool hasDecimateMesh = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}decimateMesh.exe").exists();
+      bool hasTextureMesh = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}textureMesh.exe").exists();
 
-      hasAllDependencies = hasColmap && hasOpenMVS && hasTexRecon && hasResizeImages && hasDecimateMesh;
+      hasAllDependencies = hasColmap && hasOpenMVS && hasTexRecon && hasResizeImages && hasDecimateMesh && hasTextureMesh;
     }
     else if (Platform.isLinux) {
 
@@ -451,6 +457,8 @@ class ScanningScreenModel {
       await runCommand('powershell -c "Expand-Archive -Path ./decimateMesh.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui\'"', []);
 
       await runCommand('powershell -c "Expand-Archive -Path ./resizeImages.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui\'"', []);
+      
+      await runCommand('powershell -c "Expand-Archive -Path ./textureMesh.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui\'"', []);
 
       await runCommand('powershell -c "Expand-Archive -Path ./texrecon.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui\'"', []);
 
