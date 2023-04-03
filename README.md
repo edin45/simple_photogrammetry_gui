@@ -2,6 +2,8 @@
 
 ## Usage:
 
+### **IMPORTANT: Neither the Image or Output Path can contain any spaces**
+
 When first opening, open the application as administrator since it needs administrator rights to install all dependencies.
 
 ![alt text](https://raw.githubusercontent.com/edin45/simple_photogrammetry_gui/master/readme_imgs/run_as_adminstrator.jpg)
