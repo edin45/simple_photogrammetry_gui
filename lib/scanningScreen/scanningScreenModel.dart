@@ -44,11 +44,11 @@ class ScanningScreenModel {
 
   startScanningProcess(var view, String imagesPath, String outputPath) async {
     if ((await checkDependencies(view))) {
-      String colmapPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap${slash}colmap${slash}COLMAP.bat' : 'colmap';
-      String openMvsPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}openMVS${slash}' : './openMVS/';
-      String texReconPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './';
-      String decimateMeshPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './';
-      String textureMeshPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './';
+      String colmapPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap${slash}colmap${slash}COLMAP.bat' : './dependencies/colmap/colmap';
+      String openMvsPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}openMVS${slash}' : './dependencies/openMVS/';
+      String texReconPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './dependencies/';
+      String decimateMeshPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './dependencies/';
+      String textureMeshPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './dependencies/';
       
       
       String databasePath = "$outputPath${slash}temp${slash}database.db";
@@ -71,7 +71,7 @@ class ScanningScreenModel {
         try{
 
         await shell.run('''
-        mkdir $outputPath/temp
+        mkdir $outputPath${slash}temp
         ''');
 
         }catch(e) {}
@@ -79,7 +79,7 @@ class ScanningScreenModel {
         try{
 
         await shell.run('''
-        mkdir $outputPath/temp/sparse
+        mkdir $outputPath${slash}temp${slash}sparse
         ''');
 
         }catch(e) {}
@@ -87,7 +87,7 @@ class ScanningScreenModel {
         try{
 
         await shell.run('''
-        mkdir $outputPath/temp/dense
+        mkdir $outputPath${slash}temp${slash}dense
         ''');
 
         }catch(e) {}
@@ -95,7 +95,7 @@ class ScanningScreenModel {
         try{
 
         await shell.run('''
-        mkdir $outputPath/temp/dense/sparse
+        mkdir $outputPath${slash}temp${slash}dense${slash}sparse
         ''');
 
         }catch(e) {}
@@ -103,7 +103,7 @@ class ScanningScreenModel {
         try{
 
           await shell.run('''
-          touch $outputPath/temp/database.db
+          touch $outputPath${slash}temp${slash}database.db
           ''');
 
         }catch(e) {}
@@ -117,7 +117,7 @@ class ScanningScreenModel {
 
       view.status = "1/$totalStepNumber Sift Extraction";
       view.setState(() {});
-      await runCommand("\"$colmapPath\" feature_extractor --SiftExtraction.use_gpu ${view.useGpu ? 1 : 0} --database_path \"$databasePath\" --image_path \"$imagesPath\"", []);
+      await runCommand("\"$colmapPath\" feature_extractor --SiftExtraction.use_gpu ${view.useGpu && Platform.isWindows ? 1 : 0} --database_path \"$databasePath\" --image_path \"$imagesPath\"", []);
 
       if (view.stop) {
         stop(view);
@@ -185,7 +185,11 @@ class ScanningScreenModel {
       int maxImgResolution = 2560;
       int denseRetrys = 1;
 
-      await runCommand('powershell -c "del \'$outputPath${slash}temp${slash}model_dense.mvs\'"', []);
+      if(Platform.isWindows) {
+        await runCommand('powershell -c "del \'$outputPath${slash}temp${slash}model_dense.mvs\'"', []);
+      }else{
+        await runCommand('rm -rf \'$outputPath${slash}temp${slash}model_dense.mvs\'', []);
+      }
 
       while (!File("$outputPath${slash}temp${slash}model_dense.mvs").existsSync()) {
         if (view.stop) {
@@ -207,6 +211,10 @@ class ScanningScreenModel {
 
           await runCommand('powershell -c "del \'$outputPath${slash}temp${slash}*.dmap\'"', []);
         
+        }else{
+
+          // await runCommand('rm \'$outputPath${slash}temp${slash}*.dmap\'', []);
+
         }
 
         await runCommand("\"${openMvsPath}DensifyPointCloud\" --input-file \"$outputPath${slash}temp${slash}model_colmap.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --max-resolution $maxImgResolution", []);
@@ -275,7 +283,15 @@ class ScanningScreenModel {
           await runCommand("\"${decimateMeshPath}decimateMesh\" -m \"$outputPath${slash}temp${slash}model_surface.ply\" -o \"$outputPath${slash}temp\" -t ${1+((texreconRetrys-1)/2)}", []);
         }
 
-        await runCommand("${textureMeshPath}textureMesh -m ${texreconRetrys > 1 ? "\"$outputPath${slash}temp${slash}model_surface_decimated.ply\"" : "\"$outputPath${slash}temp${slash}model_surface.ply\""} -p \"$imagesPath${slash}project.nvm\" -o \"$outputPath\"", [],workingFolder: imagesPath);
+        if(Platform.isWindows) {
+          await runCommand("\"${textureMeshPath}textureMesh\" -m ${texreconRetrys > 1 ? "\"$outputPath${slash}temp${slash}model_surface_decimated.ply\"" : "\"$outputPath${slash}temp${slash}model_surface.ply\""} -p \"$imagesPath${slash}project.nvm\" -o \"$outputPath\"", [],workingFolder: imagesPath);
+        }else{
+
+          Directory current = Directory.current;
+
+          await runCommand("\"${current.toString().replaceAll("'", "")}${textureMeshPath.replaceFirst(".", "")}textureMesh\" -m ${texreconRetrys > 1 ? "\"$outputPath${slash}temp${slash}model_surface_decimated.ply\"" : "\"$outputPath${slash}temp${slash}model_surface.ply\""} -p \"$imagesPath${slash}project.nvm\" -o \"$outputPath\"", [],workingFolder: imagesPath);
+
+        }
 
         // await runCommand("\"${openMvsPath}TextureMesh\" --input-file \"$outputPath${slash}temp${slash}model_surface.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}textured.mvs\" --export-type obj --decimate ${1/(1+((texreconRetrys-1)/6))}  --resolution-level ${(texreconRetrys-1)}", []);
 
@@ -345,6 +361,7 @@ class ScanningScreenModel {
           runCommand('killall RefineMesh', []);
           runCommand('killall TextureMesh', []);
           runCommand('killall ReconstructMesh', []);
+          runCommand('killall reconstructMesh', []);
           runCommand('killall DensifyPointCloud', []);
           runCommand('killall colmap', []);
         }
@@ -375,14 +392,17 @@ class ScanningScreenModel {
 
       
 
-      bool hasColmap = (await runCommand('colmap',[])).toString().trim().contains("COLMAP");
-      
-      // bool hasOpenMVS = await Directory("~/.simple_photogrammetry_gui_dependencies/openMVS").exists();
-      // bool hasRemoveOutliers = await File("~/.simple_photogrammetry_gui_dependencies/removeOutliers").exists();
-      // bool hasReconstructMesh = await File("~/.simple_photogrammetry_gui_dependencies/reconstructMesh").exists();
-      // bool hasTexRecon = await File("~/.simple_photogrammetry_gui_dependencies/texrecon").exists();
-      
-      hasAllDependencies = hasColmap;// && hasOpenMVS && hasRemoveOutliers && hasReconstructMesh && hasTexRecon;
+      // bool hasColmap = await Directory("~${slash}simple_photogrammetry_gui_external_programs${slash}colmap").exists();
+
+      // bool hasOpenMVS = await Directory("~${slash}simple_photogrammetry_gui_external_programs${slash}openMVS").exists();
+      // // bool hasRemoveOutliers = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}removeOutliers.exe").exists();
+      // // bool hasReconstructMesh = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}reconstructMesh.exe").exists();
+      // bool hasResizeImages = await File("~${slash}simple_photogrammetry_gui_external_programs${slash}resizeImages").exists();
+      // bool hasDecimateMesh = await File("~${slash}simple_photogrammetry_gui_external_programs${slash}decimateMesh").exists();
+      // bool hasTextureMesh = await File("~${slash}simple_photogrammetry_gui_external_programs${slash}textureMesh").exists();
+
+      // hasAllDependencies = hasColmap && hasOpenMVS && hasResizeImages && hasDecimateMesh && hasTextureMesh;
+      hasAllDependencies = true;
 
     }
     if (!hasAllDependencies) {
@@ -391,7 +411,7 @@ class ScanningScreenModel {
           view.context,
           "Some dependencies are missing, download them now?",
           [
-            Platform.isLinux ? Container() : TextButton(
+            TextButton(
                 onPressed: () async {
                   Navigator.pop(view.context);
 
@@ -420,7 +440,7 @@ class ScanningScreenModel {
                   view.setState(() {});
                 },
                 child: Text(
-                  "Yes${Platform.isLinux ? "" : " (No CUDA)"}",
+                  "Yes (No CUDA)",
                   style: TextStyle(color: view.colorScheme.onBackground, fontSize: 18),
                 )),
             TextButton(
@@ -468,11 +488,19 @@ class ScanningScreenModel {
 
       await runCommand('powershell -c "Expand-Archive -Path ./openmvs.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}openMVS\'"', []);
     } else if (Platform.isLinux) {
-      String err = await runCommand('apt', ['install', 'colmap']);
-      if (err == "permission_denied") {
-        permissionErrorAlert(view);
-        return;
-      }
+
+      // Directory current = Directory.current;
+
+      // print("currentDir: $current");
+
+      // await runCommand('echo "hello world"', []);
+      // await runCommand('cp -r "./dependencies" "~/simple_photogrammetry_gui_external_programs"', []);
+      // await runCommand('cp -r ./openMVS ~/simple_photogrammetry_gui_external_programs', []);
+
+      // bool hasResizeImages = await File("~${slash}simple_photogrammetry_gui_external_programs${slash}resizeImages").exists();
+      // bool hasDecimateMesh = await File("~${slash}simple_photogrammetry_gui_external_programs${slash}decimateMesh").exists();
+      // bool hasTextureMesh = await File("~${slash}simple_photogrammetry_gui_external_programs${slash}textureMesh").exists();
+      
       // ~/.simple_photogrammetry_gui_dependencies/
       // await runCommand('mkdir ~/.simple_photogrammetry_gui_dependencies', []);
       // await runCommand('cp ./removeOutliers ~/.simple_photogrammetry_gui_dependencies/', []);
