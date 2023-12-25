@@ -11,5 +11,5 @@ runCommand(String command, List<String> attr, {String? workingFolder}) async {
     }
     print('command_out: ${results.stdout}');
     return err == "" ? results.stdout : err;
-  }) : (workingFolder == null ? await Shell().run(command) : await Shell(workingDirectory: workingFolder).run(command));
+  }) : (workingFolder == null ? await Shell(runInShell: false).run(command) : await Shell(runInShell: false,workingDirectory: workingFolder).run(command));
 }

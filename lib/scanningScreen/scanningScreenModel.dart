@@ -276,7 +276,7 @@ class ScanningScreenModel {
         return;
       }
 
-        if(texreconRetrys > 1) {
+        if(texreconRetrys > 1 && Platform.isWindows) {
           view.status = "10/$totalStepNumber Texturing Mesh, ran out of memory retrying with lowered resolution (decimation-factor: ${1+((texreconRetrys-1)/2)})";
           view.setState(() {});
           // await runCommand("\"${resizeImagesPath}resizeImages\" -i \"${imagesPath}\" -r ${texrecon_retrys*0.7}", []);
@@ -287,13 +287,15 @@ class ScanningScreenModel {
           await runCommand("\"${textureMeshPath}textureMesh\" -m ${texreconRetrys > 1 ? "\"$outputPath${slash}temp${slash}model_surface_decimated.ply\"" : "\"$outputPath${slash}temp${slash}model_surface.ply\""} -p \"$imagesPath${slash}project.nvm\" -o \"$outputPath\"", [],workingFolder: imagesPath);
         }else{
 
-          Directory current = Directory.current;
+          // await runCommand("\"${openMvsPath}TextureMesh\" --export-type obj --input-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_surface.mvs\" -d ${(2.5+(double.parse(meshReconRetrys.toString())/2)).toString()}  --integrate-only-roi 1 --smooth 1", []);
 
-          await runCommand("\"${current.toString().replaceAll("'", "")}${textureMeshPath.replaceFirst(".", "")}textureMesh\" -m ${texreconRetrys > 1 ? "\"$outputPath${slash}temp${slash}model_surface_decimated.ply\"" : "\"$outputPath${slash}temp${slash}model_surface.ply\""} -p \"$imagesPath${slash}project.nvm\" -o \"$outputPath\"", [],workingFolder: imagesPath);
+          await runCommand("\"${openMvsPath}TextureMesh\" --input-file \"$outputPath${slash}temp${slash}model_surface.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}textured.mvs\" --export-type obj --decimate ${1/(1+((texreconRetrys-1)/6))}  --resolution-level ${(texreconRetrys-1)}", []);
+
+          // Directory current = Directory.current;
+
+          // await runCommand("\"${current.path.toString().replaceAll("'", "")}${textureMeshPath.replaceFirst(".", "")}textureMesh\" -m ${texreconRetrys > 1 ? "\"$outputPath${slash}temp${slash}model_surface_decimated.ply\"" : "\"$outputPath${slash}temp${slash}model_surface.ply\""} -p \"$imagesPath${slash}project.nvm\" -o \"$outputPath\"", [],workingFolder: imagesPath);
 
         }
-
-        // await runCommand("\"${openMvsPath}TextureMesh\" --input-file \"$outputPath${slash}temp${slash}model_surface.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}textured.mvs\" --export-type obj --decimate ${1/(1+((texreconRetrys-1)/6))}  --resolution-level ${(texreconRetrys-1)}", []);
 
         if(texreconRetrys == 8){
           view.status = "Failed, went wrong at texturing mesh";
