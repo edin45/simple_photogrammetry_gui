@@ -1,0 +1,17 @@
+#!/bin/bash
+
+HERE="$(dirname "$(readlink -f "${0}")")"
+
+previous="$LD_LIBRARY_PATH"
+
+
+if [ "$LD_LIBRARY_PATH" == "" ]
+then
+	export LD_LIBRARY_PATH="${HERE}/usr/lib:/usr/lib"
+else
+	export LD_LIBRARY_PATH="${HERE}/usr/lib:$LD_LIBRARY_PATH"
+fi
+
+
+EXEC="${HERE}/usr/bin/simple_photogrammetry_gui"
+exec "${EXEC}"

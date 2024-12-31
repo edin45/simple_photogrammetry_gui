@@ -8,6 +8,7 @@ import 'package:flutter/src/widgets/placeholder.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:roundcheckbox/roundcheckbox.dart';
+import 'package:simple_photogrammetry_gui/runCommand.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ScanningScreenView extends StatefulWidget {
@@ -32,6 +33,8 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
   String status = "";
 
   bool hasAllDependencies = false;
+
+  TextEditingController cmdTest = TextEditingController();
 
   @override
   void initState() {
@@ -96,10 +99,33 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                         Text(
                           'Use GPU when possible',
                           style: TextStyle(color: colorScheme.onBackground, fontWeight: FontWeight.normal),
-                        )
+                        ),
                       ],
                     ),
-                    /*const Padding(padding: EdgeInsets.all(8)),
+                  //  const Padding(padding: EdgeInsets.all(8)),
+                  //   Row(
+                  //     mainAxisAlignment: MainAxisAlignment.center,
+                  //     children: [
+                  //       Column(
+                  //         crossAxisAlignment: CrossAxisAlignment.start,
+                  //         children: [
+                  //           Row(
+                  //             children: [
+                  //               Text(
+                  //                 "CPU Threads:",
+                  //                 style: TextStyle(color: colorScheme.onBackground, fontWeight: FontWeight.normal),
+                  //               ),
+
+                  //             ],
+                  //           ),
+                  //           Padding(padding: EdgeInsets.all(4)),
+                  //           Text("(reduce if Step 1 uses to much memory)",style: TextStyle(color: colorScheme.onBackground, fontWeight: FontWeight.w200),),
+                  //         ],
+                  //       ),
+                  //     ],
+                  //   ),          
+                    
+                              /*const Padding(padding: EdgeInsets.all(8)),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -191,6 +217,12 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                         ),
                       ],
                     ),
+                    // Container(child: TextField(controller: cmdTest),color: Colors.white,),
+                    // TextButton(onPressed: () async {
+                      
+                    //   String current = widget.model.removeLastOccurrence(Platform.resolvedExecutable.toString(),"simple_photogrammetry_gui");
+                    //   runCommand("${cmdTest.text.replaceAll("[current]", current)}", []);
+                    // }, child: Text("Exec")),
                     const Padding(padding: EdgeInsets.all(8)),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -245,6 +277,7 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                             ? TextButton(
                                 onPressed: () async {
                                   stop = true;
+                                  widget.model.killAllProcesses();
                                   status = "Stopping...";
                                   setState(() {});
                                 },

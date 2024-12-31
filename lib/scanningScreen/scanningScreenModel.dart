@@ -42,13 +42,28 @@ class ScanningScreenModel {
     showDialog(context: context, builder: (_) => alert);
   }
 
+  String removeLastOccurrence(String input, String word) {
+    int lastIndex = input.lastIndexOf(word);
+    if (lastIndex == -1) {
+      // Word not found, return the original string
+      return input;
+    }
+
+    // Remove the last occurrence of the word
+    return input.substring(0, lastIndex) +
+        input.substring(lastIndex + word.length);
+  }
+
   startScanningProcess(var view, String imagesPath, String outputPath) async {
+    String current = removeLastOccurrence(Platform.resolvedExecutable.toString(),"simple_photogrammetry_gui");
+//    print("currentdir: $current");
+
     if ((await checkDependencies(view))) {
-      String colmapPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap${slash}colmap${slash}COLMAP.bat' : './dependencies/colmap/colmap';
-      String openMvsPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}openMVS${slash}' : './dependencies/openMVS/';
-      String texReconPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './dependencies/';
-      String decimateMeshPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './dependencies/';
-      String textureMeshPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './dependencies/';
+      String colmapPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap${slash}colmap${slash}COLMAP.bat' : '${current}dependencies/colmap/colmap';
+      String openMvsPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}openMVS${slash}' : '${current}dependencies/openMVS/';
+      String texReconPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : '${current}dependencies/';
+      String decimateMeshPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : '${current}dependencies/';
+      String textureMeshPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : '${current}dependencies/';
       
       
       String databasePath = "$outputPath${slash}temp${slash}database.db";
@@ -117,7 +132,7 @@ class ScanningScreenModel {
 
       view.status = "1/$totalStepNumber Sift Extraction";
       view.setState(() {});
-      await runCommand("\"$colmapPath\" feature_extractor --SiftExtraction.use_gpu ${view.useGpu && Platform.isWindows ? 1 : 0} --database_path \"$databasePath\" --image_path \"$imagesPath\"", []);
+      await runCommand("\"$colmapPath\" feature_extractor --SiftExtraction.use_gpu ${view.useGpu && Platform.isWindows ? 1 : 0} ${view.useGpu && Platform.isLinux ? "--SiftExtraction.num_threads 4" : ""} --database_path \"$databasePath\" --image_path \"$imagesPath\"", []);
 
       if (view.stop) {
         stop(view);
@@ -235,7 +250,7 @@ class ScanningScreenModel {
       double decimationFactorMeshRecon = 1;
         int meshReconRetrys = 1;
         
-        while (!File("$outputPath${slash}temp${slash}model_surface.mvs").existsSync()) {
+        while (!File("$outputPath${slash}temp${slash}model_surface.mvs").existsSync() && !File("$outputPath${slash}temp${slash}model_surface.ply").existsSync()) {
         
         if(decimationFactorMeshRecon == 1.0) {
 
@@ -289,7 +304,8 @@ class ScanningScreenModel {
 
           // await runCommand("\"${openMvsPath}TextureMesh\" --export-type obj --input-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_surface.mvs\" -d ${(2.5+(double.parse(meshReconRetrys.toString())/2)).toString()}  --integrate-only-roi 1 --smooth 1", []);
 
-          await runCommand("\"${openMvsPath}TextureMesh\" --input-file \"$outputPath${slash}temp${slash}model_surface.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}textured.mvs\" --export-type obj --decimate ${1/(1+((texreconRetrys-1)/6))}  --resolution-level ${(texreconRetrys-1)}", []);
+          await runCommand("\"${openMvsPath}TextureMesh\" --input-file \"$outputPath${slash}temp${slash}model_colmap.mvs\" --mesh-file \"$outputPath${slash}temp${slash}model_surface.ply\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}textured.mvs\" --export-type obj --decimate ${1/(1+((texreconRetrys-1)/6))}  --resolution-level ${(texreconRetrys-1)} --empty-color 000000", []);
+          // await runCommand("\"${textureMeshPath}textureMesh\" -m ${texreconRetrys > 1 ? "\"$outputPath${slash}temp${slash}model_surface_decimated.ply\"" : "\"$outputPath${slash}temp${slash}model_surface.ply\""} -p \"$imagesPath${slash}project.nvm\" -o \"$outputPath\"", [],workingFolder: imagesPath);
 
           // Directory current = Directory.current;
 
@@ -345,13 +361,9 @@ class ScanningScreenModel {
 
   int megaByte = 1024 * 1024;
 
-  ramUsageWatcher(int val) {
-    // Stop-Process -Name mspaint.exe -Force
-    Timer.periodic(const Duration(milliseconds: 100), (timer) async {
-      // print('free memory: ${(SysInfo.getFreePhysicalMemory() / megaByte)}');
-      if ((SysInfo.getFreePhysicalMemory() / megaByte) < 400) {
-        print("To much memory usage, Killing processes");
-        if(Platform.isWindows) {
+  killAllProcesses() {
+    if(Platform.isWindows) {
+          print("To much memory usage, Killing processes");
           runCommand('taskkill /IM "RefineMesh.exe" /F', []);
           runCommand('taskkill /IM "TextureMesh.exe" /F', []);
           runCommand('taskkill /IM "ReconstructMesh.exe" /F', []);
@@ -360,12 +372,26 @@ class ScanningScreenModel {
           runCommand('taskkill /IM "reconstructMesh.exe" /F', []);
           runCommand('taskkill /IM "texrecon.exe" /F', []);
         }else{
-          runCommand('killall RefineMesh', []);
-          runCommand('killall TextureMesh', []);
-          runCommand('killall ReconstructMesh', []);
-          runCommand('killall reconstructMesh', []);
-          runCommand('killall DensifyPointCloud', []);
-          runCommand('killall colmap', []);
+          
+            print("To much memory usage, Killing processes");
+            runCommand('killall RefineMesh', []);
+            runCommand('killall TextureMesh', []);
+            runCommand('killall ReconstructMesh', []);
+            runCommand('killall reconstructMesh', []);
+            runCommand('killall DensifyPointCloud', []);
+            runCommand('killall colmap', []);
+          
+        }
+  }
+
+  ramUsageWatcher(int val) {
+    // Stop-Process -Name mspaint.exe -Force
+    Timer.periodic(const Duration(milliseconds: 100), (timer) async {
+      // print('free memory: ${(SysInfo.getFreePhysicalMemory() / megaByte)}');
+      // print("SysInfo.getFreeVirtualMemory(): ${SysInfo.getFreeVirtualMemory()}");
+      if ((SysInfo.getFreePhysicalMemory() / megaByte) < 400) {
+        if(Platform.isWindows || (SysInfo.getFreeVirtualMemory() / megaByte) < 400) {
+          killAllProcesses();
         }
       }
     });
