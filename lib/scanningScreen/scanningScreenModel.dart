@@ -43,15 +43,19 @@ class ScanningScreenModel {
   }
 
   startScanningProcess(var view, String imagesPath, String outputPath) async {
+    
+    final directory = (await getApplicationSupportDirectory()).path;
+
     if ((await checkDependencies(view))) {
-      String colmapPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap${slash}colmap${slash}COLMAP.bat' : 'colmap';
-      String openMvsPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}openMVS${slash}' : './openMVS/';
-      String texReconPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './';
-      String decimateMeshPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './';
-      String textureMeshPath = Platform.isWindows ? 'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}' : './';
+      String colmapPath = Platform.isWindows ? '$directory${slash}colmap${slash}COLMAP.bat' : 'colmap';
+      String openMvsPath = Platform.isWindows ? '$directory${slash}openMVS${slash}' : './openMVS/';
+      String texReconPath = Platform.isWindows ? '$directory${slash}' : './';
+      String decimateMeshPath = Platform.isWindows ? '$directory${slash}' : './';
+      String textureMeshPath = Platform.isWindows ? '$directory${slash}' : './';
       
       
       String databasePath = "$outputPath${slash}temp${slash}database.db";
+      String glomapDatabasePath = "$outputPath${slash}temp${slash}global_database.db";
       int totalStepNumber = 10;
 
       var shell = Shell();
@@ -117,7 +121,12 @@ class ScanningScreenModel {
 
       view.status = "1/$totalStepNumber Sift Extraction";
       view.setState(() {});
-      await runCommand("\"$colmapPath\" feature_extractor --SiftExtraction.use_gpu ${view.useGpu ? 1 : 0} --database_path \"$databasePath\" --image_path \"$imagesPath\"", []);
+      await runCommand(colmapPath, [
+         "feature_extractor",
+         "--database_path", databasePath,
+         "--image_path", imagesPath,
+         "--FeatureExtraction.use_gpu", "${view.useGpu ? 1 : 0}",
+      ]);
 
       if (view.stop) {
         stop(view);
@@ -126,16 +135,39 @@ class ScanningScreenModel {
 
       view.status = "2/$totalStepNumber SiftMatching";
       view.setState(() {});
-      await runCommand("\"$colmapPath\" exhaustive_matcher --SiftMatching.use_gpu ${view.useGpu ? 1 : 0} --database_path \"$databasePath\"", []);
+
+      await runCommand(colmapPath, [
+         "exhaustive_matcher",
+         "--FeatureMatching.use_gpu", "${view.useGpu ? 1 : 0}",
+         "--database_path", databasePath,
+      ]);
+
+      // await runCommand("& \"$colmapPath\" exhaustive_matcher --FeatureMatching.use_gpu ${view.useGpu ? 1 : 0} --database_path \"$databasePath\"", []);
 
       if (view.stop) {
         stop(view);
         return;
       }
 
-      view.status = "3/$totalStepNumber Converting Project";
+      view.status = "3/$totalStepNumber Aligning Cameras with Glomap";
       view.setState(() {});
-      await runCommand("\"$colmapPath\" mapper --database_path \"$databasePath\" --image_path \"$imagesPath\" --output_path \"$outputPath${slash}temp${slash}sparse\"", []);
+
+      // await runCommand('powershell -c "cp $databasePath $glomapDatabasePath"', []);
+      await runCommand('powershell -c "cp \'$databasePath\' \'$glomapDatabasePath\'"', []);
+
+      await runCommand(colmapPath, [
+         "view_graph_calibrator",
+         "--database_path", glomapDatabasePath,
+      ]);
+
+      await runCommand(colmapPath, [
+         "global_mapper",
+         "--database_path", glomapDatabasePath,
+         "--image_path", imagesPath,
+         "--output_path", "$outputPath${slash}temp${slash}sparse"
+      ]);
+
+      // await runCommand("& \"$colmapPath\" global_mapper --database_path \"$glomapDatabasePath\" --image_path \"$imagesPath\" --output_path \"$outputPath${slash}temp${slash}sparse\"", []);
 
       if (view.stop) {
         stop(view);
@@ -144,7 +176,20 @@ class ScanningScreenModel {
 
       view.status = "4/$totalStepNumber Undistorting Images";
       view.setState(() {});
-      await runCommand("\"$colmapPath\" image_undistorter --image_path \"$imagesPath\" --input_path \"$outputPath${slash}temp${slash}sparse${slash}0\" --output_path \"$outputPath${slash}temp${slash}dense\" --output_type COLMAP", []);
+
+      await runCommand(colmapPath, [
+         "image_undistorter",
+         "--image_path", imagesPath,
+
+
+         "--input_path", "$outputPath${slash}temp${slash}sparse${slash}0",
+         
+         "--output_path", "$outputPath${slash}temp${slash}dense",
+
+         "--output_type", "COLMAP",
+      ]);
+
+      // await runCommand("& \"$colmapPath\" image_undistorter --image_path \"$imagesPath\" --input_path \"$outputPath${slash}temp${slash}sparse${slash}0\" --output_path \"$outputPath${slash}temp${slash}dense\" --output_type COLMAP", []);
 
       if (view.stop) {
         stop(view);
@@ -153,7 +198,20 @@ class ScanningScreenModel {
 
       view.status = "5.1/$totalStepNumber Converting Project";
       view.setState(() {});
-      await runCommand("\"$colmapPath\" model_converter --input_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_type TXT", []);
+
+      await runCommand(colmapPath, [
+         "model_converter",
+        //  "--image_path", imagesPath,
+
+
+         "--input_path", "$outputPath${slash}temp${slash}dense${slash}sparse",
+         
+         "--output_path", "$outputPath${slash}temp${slash}dense${slash}sparse",
+
+         "--output_type", "TXT",
+      ]);
+
+      // await runCommand("& \"$colmapPath\" model_converter --input_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_type TXT", []);
 
       if (view.stop) {
         stop(view);
@@ -162,7 +220,19 @@ class ScanningScreenModel {
 
        view.status = "5.2/$totalStepNumber Converting Project";
        view.setState(() {});
-       await runCommand("\"$colmapPath\" model_converter --input_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_path \"$imagesPath${slash}project.nvm\" --output_type NVM", []);
+
+       await runCommand(colmapPath, [
+         "model_converter",
+        //  "--image_path", imagesPath,
+
+
+         "--input_path", "$outputPath${slash}temp${slash}dense${slash}sparse",
+         
+         "--output_path", "$imagesPath${slash}project.nvm",
+
+         "--output_type", "NVM",
+      ]);
+      //  await runCommand("& \"$colmapPath\" model_converter --input_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_path \"$imagesPath${slash}project.nvm\" --output_type NVM", []);
 
    //   //  view.status = "5.2/$totalStepNumber Converting Project";
  //     //  view.setState(() {});
@@ -175,7 +245,15 @@ class ScanningScreenModel {
 
       view.status = "6/$totalStepNumber Converting Project to OpenMVS";
       view.setState(() {});
-      await runCommand("\"${openMvsPath}InterfaceCOLMAP\" --working-folder \"$outputPath${slash}temp${slash}dense\" --input-file \"$outputPath${slash}temp${slash}dense\" --output-file \"$outputPath${slash}temp${slash}model_colmap.mvs\"", []);
+
+      await runCommand("${openMvsPath}InterfaceCOLMAP", [
+        //  "model_converter",
+         "--working-folder", "$outputPath${slash}temp${slash}dense",
+         "--input-file", "$outputPath${slash}temp${slash}dense",
+         "--output-file", "$outputPath${slash}temp${slash}model_colmap.mvs"
+      ]);
+
+      // await runCommand("\"${openMvsPath}InterfaceCOLMAP\" --working-folder \"$outputPath${slash}temp${slash}dense\" --input-file \"$outputPath${slash}temp${slash}dense\" --output-file \"$outputPath${slash}temp${slash}model_colmap.mvs\"", []);
 
       if (view.stop) {
         stop(view);
@@ -209,7 +287,14 @@ class ScanningScreenModel {
         
         }
 
-        await runCommand("\"${openMvsPath}DensifyPointCloud\" --input-file \"$outputPath${slash}temp${slash}model_colmap.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --max-resolution $maxImgResolution", []);
+        await runCommand("${openMvsPath}DensifyPointCloud", [
+         "--input-file", "$outputPath${slash}temp${slash}model_colmap.mvs",
+         "--working-folder", "$outputPath${slash}temp",
+         "--output-file", "$outputPath${slash}temp${slash}model_dense.mvs",
+         "--max-resolution", maxImgResolution.toString(),
+        ]);
+
+        // await runCommand("\"${openMvsPath}DensifyPointCloud\" --input-file \"$outputPath${slash}temp${slash}model_colmap.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --max-resolution $maxImgResolution", []);
         if(denseRetrys == 5) {
           view.status = "Failed, went wrong at DensifyPointCloud";
           view.setState(() {});
@@ -239,7 +324,17 @@ class ScanningScreenModel {
           view.setState(() {});
         }
 
-        await runCommand("\"${openMvsPath}ReconstructMesh\" --input-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_surface.mvs\" -d ${(2.5+(double.parse(meshReconRetrys.toString())/2)).toString()}  --integrate-only-roi 1 --smooth 1", []);
+        await runCommand("${openMvsPath}ReconstructMesh", [
+         "--input-file", "$outputPath${slash}temp${slash}model_dense.mvs",
+         "--working-folder", "$outputPath${slash}temp",
+         "--output-file", "$outputPath${slash}temp${slash}model_surface.mvs",
+         "-d", (2.5+(double.parse(meshReconRetrys.toString())/2)).toString(),
+        //  "--integrate-only-roi", "1",
+         "--smooth", "1",
+         "--remove-spurious", "0",
+        ]);
+
+        // await runCommand("\"${openMvsPath}ReconstructMesh\" --input-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_surface.mvs\" -d ${(2.5+(double.parse(meshReconRetrys.toString())/2)).toString()}  --integrate-only-roi 1 --smooth 1", []);
         decimationFactorMeshRecon=decimationFactorMeshRecon*0.7;
 
         if(meshReconRetrys == 10) {
@@ -261,6 +356,8 @@ class ScanningScreenModel {
 
       int texreconRetrys = 1;
 
+      
+
       while(!File("$outputPath${slash}textured.obj").existsSync()) {
 
         if (view.stop) {
@@ -272,10 +369,21 @@ class ScanningScreenModel {
           view.status = "10/$totalStepNumber Texturing Mesh, ran out of memory retrying with lowered resolution (decimation-factor: ${1+((texreconRetrys-1)/2)})";
           view.setState(() {});
           // await runCommand("\"${resizeImagesPath}resizeImages\" -i \"${imagesPath}\" -r ${texrecon_retrys*0.7}", []);
-          await runCommand("\"${decimateMeshPath}decimateMesh\" -m \"$outputPath${slash}temp${slash}model_surface.ply\" -o \"$outputPath${slash}temp\" -t ${1+((texreconRetrys-1)/2)}", []);
+          await runCommand("${decimateMeshPath}decimateMesh", [
+            "-m", "$outputPath${slash}temp${slash}model_surface.ply",
+            "-o", "$outputPath${slash}temp",
+            "-t", "${1+((texreconRetrys-1)/2)}"
+          ]);
+          // await runCommand("\"${decimateMeshPath}decimateMesh\" -m \"$outputPath${slash}temp${slash}model_surface.ply\" -o \"$outputPath${slash}temp\" -t ${1+((texreconRetrys-1)/2)}", []);
         }
 
-        await runCommand("${textureMeshPath}textureMesh -m ${texreconRetrys > 1 ? "\"$outputPath${slash}temp${slash}model_surface_decimated.ply\"" : "\"$outputPath${slash}temp${slash}model_surface.ply\""} -p \"$imagesPath${slash}project.nvm\" -o \"$outputPath\"", [],workingFolder: imagesPath);
+        await runCommand("${textureMeshPath}textureMesh", [
+            "-m", texreconRetrys > 1 ? "$outputPath${slash}temp${slash}model_surface_decimated.ply" : "$outputPath${slash}temp${slash}model_surface.ply",
+            "-p", "$imagesPath${slash}project.nvm",
+            "-o", outputPath
+        ],workingFolder: imagesPath);
+
+        // await runCommand("${textureMeshPath}textureMesh -m ${texreconRetrys > 1 ? "\"$outputPath${slash}temp${slash}model_surface_decimated.ply\"" : "\"$outputPath${slash}temp${slash}model_surface.ply\""} -p \"$imagesPath${slash}project.nvm\" -o \"$outputPath\"", [],workingFolder: imagesPath);
 
         // await runCommand("\"${openMvsPath}TextureMesh\" --input-file \"$outputPath${slash}temp${slash}model_surface.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}textured.mvs\" --export-type obj --decimate ${1/(1+((texreconRetrys-1)/6))}  --resolution-level ${(texreconRetrys-1)}", []);
 
@@ -358,16 +466,21 @@ class ScanningScreenModel {
   }
 
   checkDependencies(var view) async {
+    
+    final directory = (await getApplicationSupportDirectory()).path;
+
+    print("Directory: $directory");
+
     bool hasAllDependencies = false;
     if (Platform.isWindows) {
-      bool hasColmap = await Directory("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap").exists();
-      bool hasOpenMVS = await Directory("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}openMVS").exists();
+      bool hasColmap = await Directory("$directory${slash}colmap").exists();
+      bool hasOpenMVS = await Directory("$directory${slash}openMVS").exists();
       // bool hasRemoveOutliers = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}removeOutliers.exe").exists();
       // bool hasReconstructMesh = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}reconstructMesh.exe").exists();
-      bool hasTexRecon = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}texrecon.exe").exists();
-      bool hasResizeImages = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}resizeImages.exe").exists();
-      bool hasDecimateMesh = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}decimateMesh.exe").exists();
-      bool hasTextureMesh = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}textureMesh.exe").exists();
+      bool hasTexRecon = await File("$directory${slash}texrecon.exe").exists();
+      bool hasResizeImages = await File("$directory${slash}resizeImages.exe").exists();
+      bool hasDecimateMesh = await File("$directory${slash}decimateMesh.exe").exists();
+      bool hasTextureMesh = await File("$directory${slash}textureMesh.exe").exists();
 
       hasAllDependencies = hasColmap && hasOpenMVS && hasTexRecon && hasResizeImages && hasDecimateMesh && hasTextureMesh;
     }
@@ -432,41 +545,46 @@ class ScanningScreenModel {
                   style: TextStyle(color: view.colorScheme.onBackground, fontSize: 18),
                 ))
           ],
-          desc: Platform.isLinux ? "This requires the application to be run with sudo" : "This requires the application to be run as adminstrator");
+          /*desc: Platform.isLinux ? "This requires the application to be run with sudo" : "This requires the application to be run as adminstrator"*/);
     }
     return hasAllDependencies;
   }
 
   downloadDependencies(var view, bool cuda) async {
+
+    final directory = (await getApplicationSupportDirectory()).path;
+
+    print("Directory: $directory");
+
     if (Platform.isWindows) {
       if (!File("./colmap.zip").existsSync()) {
-        await runCommand('powershell -c "Invoke-WebRequest -OutFile colmap.zip -Uri https://github.com/colmap/colmap/releases/download/3.7/${cuda ? "COLMAP-3.7-windows-cuda.zip" : "COLMAP-3.7-windows-no-cuda.zip"}"', []);
+        await runCommand('powershell -c "Invoke-WebRequest -OutFile colmap.zip -Uri https://github.com/colmap/colmap/releases/download/4.0.4/${cuda ? "colmap-x64-windows-cuda.zip" : "colmap-x64-windows-nocuda.zip"}"', []);
       }
 
       // if (!File("./openmvs.zip").existsSync()) {
       //   await runCommand('powershell -c "Invoke-WebRequest -OutFile openmvs.zip -Uri https://github.com/cdcseacave/openMVS/releases/download/v2.1.0/OpenMVS_Windows_x64.7z"', []);
       // }
 
-      String err = await runCommand('powershell -c "Expand-Archive -Path ./colmap.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap\'"', []);
+      String err = await runCommand('powershell -c "Expand-Archive -Path ./colmap.zip -DestinationPath \'$directory${slash}colmap\'"', []);
 
       if (err == "permission_denied") {
         permissionErrorAlert(view);
         return;
       }
 
-      await runCommand('powershell -c "Expand-Archive -Path ./decimateMesh.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui\'"', []);
+      await runCommand('powershell -c "Expand-Archive -Path ./decimateMesh.zip -DestinationPath \'$directory\'"', []);
 
-      await runCommand('powershell -c "Expand-Archive -Path ./resizeImages.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui\'"', []);
+      await runCommand('powershell -c "Expand-Archive -Path ./resizeImages.zip -DestinationPath \'$directory\'"', []);
       
-      await runCommand('powershell -c "Expand-Archive -Path ./textureMesh.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui\'"', []);
+      await runCommand('powershell -c "Expand-Archive -Path ./textureMesh.zip -DestinationPath \'$directory\'"', []);
 
-      await runCommand('powershell -c "Expand-Archive -Path ./texrecon.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui\'"', []);
+      await runCommand('powershell -c "Expand-Archive -Path ./texrecon.zip -DestinationPath \'$directory\'"', []);
 
-      await runCommand('powershell -c "Rename-Item -Path \'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap${slash}${cuda ? 'COLMAP-3.7-windows-cuda' : 'COLMAP-3.7-windows-no-cuda'}\' -NewName \'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}colmap${slash}colmap\'"', []);
+      await runCommand('powershell -c "Rename-Item -Path \'$directory${slash}colmap${slash}${cuda ? 'colmap-x64-windows-cuda' : 'colmap-x64-windows-nocuda'}\' -NewName \'$directory${slash}colmap${slash}colmap\'"', []);
 
       await runCommand('powershell -c "Rename-Item -Path ./${cuda ? 'openmvs_cuda.zip' : 'openmvs_no_cuda.zip'} -NewName ./openmvs.zip"', []);
 
-      await runCommand('powershell -c "Expand-Archive -Path ./openmvs.zip -DestinationPath \'C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}openMVS\'"', []);
+      await runCommand('powershell -c "Expand-Archive -Path ./openmvs.zip -DestinationPath \'$directory${slash}openMVS\'"', []);
     } else if (Platform.isLinux) {
       String err = await runCommand('apt', ['install', 'colmap']);
       if (err == "permission_denied") {

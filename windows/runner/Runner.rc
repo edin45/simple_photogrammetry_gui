@@ -93,7 +93,7 @@ BEGIN
             VALUE "FileDescription", "simple_photogrammetry_gui" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "simple_photogrammetry_gui" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2023 com.example. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
             VALUE "OriginalFilename", "simple_photogrammetry_gui.exe" "\0"
             VALUE "ProductName", "simple_photogrammetry_gui" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
