@@ -4,17 +4,15 @@
 
 ### **IMPORTANT: Neither the Image or Output Path can contain any spaces**
 
-When first opening, open the application as administrator since it needs administrator rights to install all dependencies.
+Windows Users: You will be prompted to download missing dependencies, click **Install (Cuda)** if you have an Nvidia GPU, and if not, click **Install (No Cuda)**.
 
-![alt text](https://raw.githubusercontent.com/edin45/simple_photogrammetry_gui/master/readme_imgs/run_as_adminstrator.jpg)
-
-Click on the Install option you'd like to use, click **Install (Cuda)** if you have an Nvidia GPU, and if not, click **Install (No Cuda)**.
+Linux Users: All dependencies are packaged in the .AppImage - so this step does not apply
 
 ![alt text](https://raw.githubusercontent.com/edin45/simple_photogrammetry_gui/master/readme_imgs/install_dependencies.jpg)
 
-Once the dependencies finish installing, click "Select Image Folder" to select the folder containing the images.
+Then click "Select Image Folder" to select the folder containing the images.
 
-Then click **Select Output Folder** to select the folder where the result should be stored (There should be plenty of disk space in the location of the output folder).
+Aftewards click **Select Output Folder** to select the folder where the result should be stored (There should be plenty of disk space in the location of the output folder).
 
 ![alt text](https://raw.githubusercontent.com/edin45/simple_photogrammetry_gui/master/readme_imgs/scanning_screen.jpg)
 
@@ -38,6 +36,24 @@ Lastly, click start. The finished result will be in the output folder with the n
    - decimateMesh.exe (compiled from python/decimateMesh.py using command: pyinstaller --onefile decimateMesh.py --collect-all pymeshlab)
    - resizeImages.exe (compiled from python/resizeImages.py using command: pyinstaller --onefile resizeImages.py)
    - texrecon.exe (is in the folder mvs-texturing)
+
+### Linux:
+
+    This is experimental - so it could have issues,
+    but if it works it should compile all dependencies, collect them and set them up, and finally package everything into a nice .AppImage
+    
+    ```
+    git clone https://github.com/edin45/simple_photogrammetry_gui.git
+    cd simple_photogrammetry_gui/linux_compilation_scripts_wip
+    docker build -t simple_photogrammetry_gui_box .
+    docker run -it -v $(pwd)/..:/workspace/simple_photogrammetry_gui simple_photogrammetry_gui_box /bin/bash
+    cd /workspace
+    cp simple_photogrammetry_gui/linux_compilation_scripts_wip/compile_dependecies.sh .
+    cp simple_photogrammetry_gui/linux_compilation_scripts_wip/build_appimage.sh .
+    ./compile_dependecies.sh
+    ./build_appimage.sh
+    cp *.AppImage simple_photogrammetry_gui/
+    ```
  
 ## Based on:
 

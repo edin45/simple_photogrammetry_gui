@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=simple_photogrammetry_gui
+Exec=env GTK_THEME=Adwaita:dark simple_photogrammetry_gui
+Icon=app_icon
+Type=Application
+Categories=Graphics;3DGraphics;
