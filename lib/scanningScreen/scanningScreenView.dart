@@ -8,7 +8,9 @@ import 'package:flutter/src/widgets/placeholder.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:roundcheckbox/roundcheckbox.dart';
+import 'package:simple_photogrammetry_gui/TitleBar/TitleBar.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:hexcolor/hexcolor.dart';
 
 class ScanningScreenView extends StatefulWidget {
   late var model;
@@ -55,262 +57,274 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
     return DynamicColorBuilder(builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
       colorScheme = darkDynamic ?? const ColorScheme.dark();
       return Scaffold(
-        backgroundColor: colorScheme.background,
-        body: isDownloadingDependencies
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      color: colorScheme.primary,
-                    ),
-                    Text(
-                      "downloading dependencies...",
-                      style: TextStyle(color: colorScheme.onBackground),
-                    )
-                  ],
-                ),
-              )
-            : Stack(
-                children: [
-                  Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Row(
+        backgroundColor: HexColor("#282828"),
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              children: [
+                TitleBar(),
+                Align(
+                          alignment: Alignment.topRight,
+                          child: GestureDetector(
+                            onTap: () {
+                              var alert = AlertDialog(
+                                backgroundColor: HexColor("#282828"),
+                                title: Text(
+                                  "Simple photogrammetry gui is based on:",
+                                  style: TextStyle(color: HexColor("#ebdbb2")),
+                                ),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    linkWidget("1. Colmap", "https://colmap.github.io/"),
+                                    linkWidget("2. OpenMVS", "https://github.com/cdcseacave/openMVS"),
+                                    linkWidget("3. mvs-texturing", "https://github.com/nmoehrle/mvs-texturing"),
+                                    linkWidget("4. pymeshlab", "https://github.com/cnr-isti-vclab/PyMeshLab"),
+                                  ],
+                                ),
+                              );
+                              showDialog(context: context, builder: (_) => alert);
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Icon(Icons.question_mark,color: HexColor("#ebdbb2"),),
+                              ),
+                            ),
+                          ))
+              ],
+            ),
+            isDownloadingDependencies
+                ? Center(
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        RoundCheckBox(
-                          size: 30,
-                          isChecked: useGpu,
-                          checkedColor: colorScheme.primary,
-                          disabledColor: colorScheme.background,
-                          uncheckedColor: colorScheme.background,
-                          checkedWidget: Icon(
-                            Icons.check,
-                            color: colorScheme.onPrimary,
-                          ),
-                          onTap: (selected) {
-                            useGpu = selected ?? true;
-                            setState(() {});
-                          },
+                        CircularProgressIndicator(
+                          color: HexColor("#458588"),
                         ),
-                        const Padding(padding: EdgeInsets.all(5)),
                         Text(
-                          'Use GPU when possible',
-                          style: TextStyle(color: colorScheme.onBackground, fontWeight: FontWeight.normal),
+                          "downloading dependencies...",
+                          style: TextStyle(color: HexColor("#ebdbb2")),
                         )
                       ],
                     ),
-                    /*const Padding(padding: EdgeInsets.all(8)),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        RoundCheckBox(
-                          size: 30,
-                          isChecked: reconstructAndTextureMesh,
-                          checkedColor: colorScheme.primary,
-                          disabledColor: colorScheme.background,
-                          uncheckedColor: colorScheme.background,
-                          checkedWidget: Icon(
-                            Icons.check,
-                            color: colorScheme.onPrimary,
-                          ),
-                          onTap: (selected) {
-                            reconstructAndTextureMesh = (selected ?? false);
-                            setState(() {});
-                          },
+                  )
+                : Stack(
+                    children: [
+                      Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            RoundCheckBox(
+                              size: 30,
+                              isChecked: useGpu,
+                              checkedColor: HexColor("#458588"),
+                              disabledColor: HexColor("#282828"),
+                              uncheckedColor: HexColor("#282828"),
+                              checkedWidget: Icon(
+                                Icons.check,
+                                color: HexColor("#282828"),
+                              ),
+                              onTap: (selected) {
+                                useGpu = selected ?? true;
+                                setState(() {});
+                              },
+                            ),
+                            const Padding(padding: EdgeInsets.all(5)),
+                            Text(
+                              'Use GPU when possible',
+                              style: TextStyle(color: HexColor("#ebdbb2"), fontWeight: FontWeight.normal),
+                            )
+                          ],
                         ),
-                        const Padding(padding: EdgeInsets.all(5)),
-                        Text(
-                          'Reconstruct & Texture Mesh (High memory usage)',
-                          style: TextStyle(color: colorScheme.onBackground, fontWeight: FontWeight.normal),
-                        )
-                      ],
-                    ),*/
-                    const Padding(padding: EdgeInsets.all(10.0)),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          imageFolder == "" ? "No image folder selected" : imageFolder,
-                          style: TextStyle(color: colorScheme.onBackground, fontWeight: FontWeight.w200),
-                        ),
+                        /*const Padding(padding: EdgeInsets.all(8)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            RoundCheckBox(
+                              size: 30,
+                              isChecked: reconstructAndTextureMesh,
+                              checkedColor: HexColor("#458588"),
+                              disabledColor: colorScheme.background,
+                              uncheckedColor: colorScheme.background,
+                              checkedWidget: Icon(
+                                Icons.check,
+                                color: HexColor("#282828"),
+                              ),
+                              onTap: (selected) {
+                                reconstructAndTextureMesh = (selected ?? false);
+                                setState(() {});
+                              },
+                            ),
+                            const Padding(padding: EdgeInsets.all(5)),
+                            Text(
+                              'Reconstruct & Texture Mesh (High memory usage)',
+                              style: TextStyle(color: HexColor("#ebdbb2"), fontWeight: FontWeight.normal),
+                            )
+                          ],
+                        ),*/
                         const Padding(padding: EdgeInsets.all(10.0)),
-                        TextButton(
-                          onPressed: () async {
-                            String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-
-                            if (selectedDirectory == null) {
-                              // User canceled the picker
-                            } else {
-                              imageFolder = selectedDirectory;
-                            }
-                            setState(() {});
-                          },
-                          style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
-                            if (states.contains(MaterialState.pressed)) {
-                              return colorScheme.primaryContainer;
-                            }
-                            return colorScheme.primary;
-                          })),
-                          child: Text(
-                            '${imageFolder == "" ? "Select" : "Change"} Image Folder',
-                            style: TextStyle(color: colorScheme.onPrimary),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Padding(padding: EdgeInsets.all(8)),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          outputFolder == "" ? "No output folder selected" : outputFolder,
-                          style: TextStyle(color: colorScheme.onBackground, fontWeight: FontWeight.w200),
-                        ),
-                        const Padding(padding: EdgeInsets.all(10.0)),
-                        TextButton(
-                          onPressed: () async {
-                            String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-
-                            if (selectedDirectory == null) {
-                              // User canceled the picker
-                            } else {
-                              outputFolder = selectedDirectory;
-                            }
-                            setState(() {});
-                          },
-                          style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
-                            if (states.contains(MaterialState.pressed)) {
-                              return colorScheme.primaryContainer;
-                            }
-                            return colorScheme.primary;
-                          })),
-                          child: Text(
-                            '${outputFolder == "" ? "Select" : "Change"} Output Folder',
-                            style: TextStyle(color: colorScheme.onPrimary),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Padding(padding: EdgeInsets.all(8)),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        TextButton(
-                          onPressed: () async {
-                            if (imageFolder == "") {
-                              widget.model.showAlert(colorScheme, context, "You have to select an image folder", [
-                                TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: Text(
-                                      "Ok",
-                                      style: TextStyle(color: colorScheme.onBackground),
-                                    ))
-                              ]);
-                            } else if (outputFolder == "") {
-                              widget.model.showAlert(colorScheme, context, "You have to select an output folder", [
-                                TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: Text(
-                                      "Ok",
-                                      style: TextStyle(color: colorScheme.onBackground),
-                                    ))
-                              ]);
-                            } else {
-                              stop = false;
-                              widget.model.startScanningProcess(this, imageFolder, outputFolder);
-                            }
-                          },
-                          //  : () {
-                          //   widget.model.startScanningProcess(this, imageFolder, outputFolder);
-                          // },
-                          style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
-                            if (states.contains(MaterialState.pressed)) {
-                              return colorScheme.primaryContainer;
-                            }
-                            return colorScheme.primary;
-                          })),
-                          child: Text(
-                            // hasAllDependencies ? 
-                            'Start',
-                            //  : "Install Dependencies (Needs Adminstrator rights)",
-                            style: TextStyle(color: colorScheme.onPrimary),
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              imageFolder == "" ? "No image folder selected" : imageFolder,
+                              style: TextStyle(color: HexColor("#ebdbb2"), fontWeight: FontWeight.w200),
+                            ),
+                            const Padding(padding: EdgeInsets.all(10.0)),
+                            TextButton(
+                              onPressed: () async {
+                                String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+                
+                                if (selectedDirectory == null) {
+                                  // User canceled the picker
+                                } else {
+                                  imageFolder = selectedDirectory;
+                                }
+                                setState(() {});
+                              },
+                              style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
+                                if (states.contains(MaterialState.pressed)) {
+                                  return HexColor("#83a598");
+                                }
+                                return HexColor("#458588");
+                              })),
+                              child: Text(
+                                '${imageFolder == "" ? "Select" : "Change"} Image Folder',
+                                style: TextStyle(color: HexColor("#282828")),
+                              ),
+                            ),
+                          ],
                         ),
                         const Padding(padding: EdgeInsets.all(8)),
-                        running
-                            ? TextButton(
-                                onPressed: () async {
-                                  stop = true;
-                                  status = "Stopping...";
-                                  setState(() {});
-                                },
-                                style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
-                                  if (states.contains(MaterialState.pressed)) {
-                                    return colorScheme.errorContainer;
-                                  }
-                                  return colorScheme.error;
-                                })),
-                                child: Text(
-                                  'Stop',
-                                  style: TextStyle(color: colorScheme.onError),
-                                ),
-                              )
-                            : Container(),
-                      ],
-                    ),
-                    const Padding(padding: EdgeInsets.all(20)),
-                    Text(
-                      status,
-                      style: TextStyle(fontSize: 21, color: colorScheme.onBackground),
-                    ),
-                    const Padding(padding: EdgeInsets.all(10)),
-                    running
-                        ? Center(
-                            child: SizedBox(
-                                width: 150,
-                                child: LinearProgressIndicator(
-                                  backgroundColor: colorScheme.primary,
-                                  color: colorScheme.onPrimary,
-                                )),
-                          )
-                        : Container()
-                  ]),
-                  Align(
-                      alignment: Alignment.topRight,
-                      child: GestureDetector(
-                        onTap: () {
-                          var alert = AlertDialog(
-                            backgroundColor: colorScheme.background,
-                            title: Text(
-                              "Simple photogrammetry gui is based on:",
-                              style: TextStyle(color: colorScheme.onBackground),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              outputFolder == "" ? "No output folder selected" : outputFolder,
+                              style: TextStyle(color: HexColor("#ebdbb2"), fontWeight: FontWeight.w200),
                             ),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                linkWidget("1. Colmap", "https://colmap.github.io/"),
-                                linkWidget("2. OpenMVS", "https://github.com/cdcseacave/openMVS"),
-                                linkWidget("3. mvs-texturing", "https://github.com/nmoehrle/mvs-texturing"),
-                                linkWidget("4. pymeshlab", "https://github.com/cnr-isti-vclab/PyMeshLab"),
-                              ],
+                            const Padding(padding: EdgeInsets.all(10.0)),
+                            TextButton(
+                              onPressed: () async {
+                                String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+                
+                                if (selectedDirectory == null) {
+                                  // User canceled the picker
+                                } else {
+                                  outputFolder = selectedDirectory;
+                                }
+                                setState(() {});
+                              },
+                              style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
+                                if (states.contains(MaterialState.pressed)) {
+                                  return HexColor("#83a598");
+                                }
+                                return HexColor("#458588");
+                              })),
+                              child: Text(
+                                '${outputFolder == "" ? "Select" : "Change"} Output Folder',
+                                style: TextStyle(color: HexColor("#282828")),
+                              ),
                             ),
-                          );
-                          showDialog(context: context, builder: (_) => alert);
-                        },
-                        child: Container(
-                          color: Colors.transparent,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Icon(Icons.question_mark,color: colorScheme.onBackground,),
-                          ),
+                          ],
                         ),
-                      ))
-                ],
-              ),
+                        const Padding(padding: EdgeInsets.all(8)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            TextButton(
+                              onPressed: () async {
+                                if (imageFolder == "") {
+                                  widget.model.showAlert(colorScheme, context, "You have to select an image folder", [
+                                    TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          "Ok",
+                                          style: TextStyle(color: HexColor("#ebdbb2")),
+                                        ))
+                                  ]);
+                                } else if (outputFolder == "") {
+                                  widget.model.showAlert(colorScheme, context, "You have to select an output folder", [
+                                    TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          "Ok",
+                                          style: TextStyle(color: HexColor("#ebdbb2")),
+                                        ))
+                                  ]);
+                                } else {
+                                  stop = false;
+                                  widget.model.startScanningProcess(this, imageFolder, outputFolder);
+                                }
+                              },
+                              //  : () {
+                              //   widget.model.startScanningProcess(this, imageFolder, outputFolder);
+                              // },
+                              style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
+                                if (states.contains(MaterialState.pressed)) {
+                                  return HexColor("#83a598");
+                                }
+                                return HexColor("#458588");
+                              })),
+                              child: Text(
+                                // hasAllDependencies ? 
+                                'Start',
+                                //  : "Install Dependencies (Needs Adminstrator rights)",
+                                style: TextStyle(color: HexColor("#282828")),
+                              ),
+                            ),
+                            const Padding(padding: EdgeInsets.all(8)),
+                            running
+                                ? TextButton(
+                                    onPressed: () async {
+                                      stop = true;
+                                      status = "Stopping...";
+                                      setState(() {});
+                                    },
+                                    style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
+                                      if (states.contains(MaterialState.pressed)) {
+                                        return colorScheme.errorContainer;
+                                      }
+                                      return colorScheme.error;
+                                    })),
+                                    child: Text(
+                                      'Stop',
+                                      style: TextStyle(color: colorScheme.onError),
+                                    ),
+                                  )
+                                : Container(),
+                          ],
+                        ),
+                        const Padding(padding: EdgeInsets.all(20)),
+                        Text(
+                          status,
+                          style: TextStyle(fontSize: 21, color: HexColor("#ebdbb2")),
+                        ),
+                        const Padding(padding: EdgeInsets.all(10)),
+                        running
+                            ? Center(
+                                child: SizedBox(
+                                    width: 150,
+                                    child: LinearProgressIndicator(
+                                      backgroundColor: HexColor("#458588"),
+                                      color: HexColor("#282828"),
+                                    )),
+                              )
+                            : Container()
+                      ]),
+                      
+                    ],
+                  ),
+            Container(),
+          ],
+        ),
       );
     });
   }
@@ -324,7 +338,7 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
       },
       child: Text(
         text,
-        style: TextStyle(color: colorScheme.onBackground, decoration: TextDecoration.underline),
+        style: TextStyle(color: HexColor("#ebdbb2"), decoration: TextDecoration.underline),
       ),
     );
   }

@@ -14,6 +14,7 @@ project = options.project
 mesh = options.mesh
 
 ms = pymeshlab.MeshSet()
+ms.set_verbosity(True)
 print("opening project...")
 ms.load_project(project)
 print('reading...')

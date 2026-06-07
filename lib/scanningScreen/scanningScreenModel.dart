@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:hexcolor/hexcolor.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:process_run/shell.dart';
 
@@ -7,17 +8,27 @@ import 'package:flutter/material.dart';
 import 'package:isolate_current_directory/isolate_current_directory.dart';
 import 'package:simple_photogrammetry_gui/runCommand.dart';
 import 'package:system_info2/system_info2.dart';
+import 'package:path/path.dart' as p;
 
 class ScanningScreenModel {
 
   String slash = Platform.isWindows ? "\\" : "/";
 
+  String _getAppDir() {
+    final appDir = Platform.environment['APPDIR'];
+    if (appDir != null) {
+      return "$appDir/usr/bin";
+    }else{
+      return '/workspace/install/bin';
+    }
+  }
+
   showAlert(ColorScheme colorScheme, BuildContext context, String title, List<Widget> buttons, {String? desc, Widget? content}) {
     var alert = AlertDialog(
-      backgroundColor: colorScheme.background,
+      backgroundColor: HexColor("#282828"),
       title: Text(
         title,
-        style: TextStyle(color: colorScheme.onBackground),
+        style: TextStyle(color: HexColor("#ebdbb2")),
       ),
       content: SizedBox(
         height: 100,
@@ -27,7 +38,7 @@ class ScanningScreenModel {
             desc != null
                 ? Text(
                     desc,
-                    style: TextStyle(color: colorScheme.onBackground),
+                    style: TextStyle(color: HexColor("#ebdbb2")),
                   )
                 : Container(),
             content ?? Container(),
@@ -47,11 +58,12 @@ class ScanningScreenModel {
     final directory = (await getApplicationSupportDirectory()).path;
 
     if ((await checkDependencies(view))) {
-      String colmapPath = Platform.isWindows ? '$directory${slash}colmap${slash}COLMAP.bat' : 'colmap';
-      String openMvsPath = Platform.isWindows ? '$directory${slash}openMVS${slash}' : './openMVS/';
-      String texReconPath = Platform.isWindows ? '$directory${slash}' : './';
-      String decimateMeshPath = Platform.isWindows ? '$directory${slash}' : './';
-      String textureMeshPath = Platform.isWindows ? '$directory${slash}' : './';
+      String appDir = _getAppDir();
+      String colmapPath = Platform.isWindows ? '$directory${slash}colmap${slash}COLMAP.bat' : '$appDir/colmap';
+      String openMvsPath = Platform.isWindows ? '$directory${slash}openMVS${slash}' : '$appDir/OpenMVS/';
+      // String texReconPath = Platform.isWindows ? '$directory${slash}' : './';
+      String decimateMeshPath = Platform.isWindows ? '$directory${slash}' : '$appDir/';
+      String textureMeshPath = Platform.isWindows ? '$directory${slash}' : '$appDir/';
       
       
       String databasePath = "$outputPath${slash}temp${slash}database.db";
@@ -152,8 +164,19 @@ class ScanningScreenModel {
       view.status = "3/$totalStepNumber Aligning Cameras with Glomap";
       view.setState(() {});
 
-      // await runCommand('powershell -c "cp $databasePath $glomapDatabasePath"', []);
-      await runCommand('powershell -c "cp \'$databasePath\' \'$glomapDatabasePath\'"', []);
+      final sourceFile = File(databasePath);
+    
+      if (await sourceFile.exists()) {
+        await sourceFile.copy(glomapDatabasePath);
+      }
+
+      // // await runCommand('powershell -c "cp $databasePath $glomapDatabasePath"', []);
+      // if(Platform.isWindows) {
+      //   await runCommand('powershell -c "cp \'$databasePath\' \'$glomapDatabasePath\'"', []);
+      // }else{
+      //   // await runCommand('cp $databasePath $glomapDatabasePath', []);
+        
+      // }
 
       await runCommand(colmapPath, [
          "view_graph_calibrator",
@@ -263,7 +286,17 @@ class ScanningScreenModel {
       int maxImgResolution = 2560;
       int denseRetrys = 1;
 
-      await runCommand('powershell -c "del \'$outputPath${slash}temp${slash}model_dense.mvs\'"', []);
+      // if(Platform.isWindows) {
+      //   await runCommand('powershell -c "del \'$outputPath${slash}temp${slash}model_dense.mvs\'"', []);
+      // }else{
+      //   await runCommand('rm $outputPath${slash}temp${slash}model_dense.mvs', []);
+      // }
+
+      final file = File("$outputPath${slash}temp${slash}model_dense.mvs");
+
+      if (await file.exists()) {
+        await file.delete();
+      }
 
       while (!File("$outputPath${slash}temp${slash}model_dense.mvs").existsSync()) {
         if (view.stop) {
@@ -312,7 +345,7 @@ class ScanningScreenModel {
       double decimationFactorMeshRecon = 1;
         int meshReconRetrys = 1;
         
-        while (!File("$outputPath${slash}temp${slash}model_surface.mvs").existsSync()) {
+        while (!File("$outputPath${slash}temp${slash}model_surface.mvs").existsSync() && !File("$outputPath${slash}temp${slash}model_surface.ply").existsSync()) {
         
         if(decimationFactorMeshRecon == 1.0) {
 
@@ -327,7 +360,9 @@ class ScanningScreenModel {
         await runCommand("${openMvsPath}ReconstructMesh", [
          "--input-file", "$outputPath${slash}temp${slash}model_dense.mvs",
          "--working-folder", "$outputPath${slash}temp",
-         "--output-file", "$outputPath${slash}temp${slash}model_surface.mvs",
+         "--output-file", "model_surface.mvs",
+         
+        //  "--output-file", "$outputPath${slash}temp${slash}model_surface.mvs",
          "-d", (2.5+(double.parse(meshReconRetrys.toString())/2)).toString(),
         //  "--integrate-only-roi", "1",
          "--smooth", "1",
@@ -377,10 +412,20 @@ class ScanningScreenModel {
           // await runCommand("\"${decimateMeshPath}decimateMesh\" -m \"$outputPath${slash}temp${slash}model_surface.ply\" -o \"$outputPath${slash}temp\" -t ${1+((texreconRetrys-1)/2)}", []);
         }
 
-        await runCommand("${textureMeshPath}textureMesh", [
-            "-m", texreconRetrys > 1 ? "$outputPath${slash}temp${slash}model_surface_decimated.ply" : "$outputPath${slash}temp${slash}model_surface.ply",
-            "-p", "$imagesPath${slash}project.nvm",
-            "-o", outputPath
+        // await runCommand("${textureMeshPath}${Platform.isWindows ? "textureMesh" : "run_texturing.sh"}", [
+        //     "-m", texreconRetrys > 1 ? "$outputPath${slash}temp${slash}model_surface_decimated.ply" : "$outputPath${slash}temp${slash}model_surface.ply",
+        //     "-p", "$imagesPath${slash}project.nvm",
+        //     "-o", outputPath
+        // ],workingFolder: imagesPath);
+
+        await runCommand("${openMvsPath}TextureMesh", [
+          "--input-file", "$outputPath${slash}temp${slash}model_colmap.mvs",
+          "--mesh-file", "$outputPath${slash}temp${slash}model_surface.ply",
+          "--working-folder", "$outputPath${slash}temp",
+          "--output-file", "$outputPath${slash}textured.mvs",
+          "--export-type", "obj",
+          "--decimate", "${1/(1+((texreconRetrys-1)/6))}",
+          "--resolution-level", "${(texreconRetrys-1)}"
         ],workingFolder: imagesPath);
 
         // await runCommand("${textureMeshPath}textureMesh -m ${texreconRetrys > 1 ? "\"$outputPath${slash}temp${slash}model_surface_decimated.ply\"" : "\"$outputPath${slash}temp${slash}model_surface.ply\""} -p \"$imagesPath${slash}project.nvm\" -o \"$outputPath\"", [],workingFolder: imagesPath);
@@ -488,14 +533,14 @@ class ScanningScreenModel {
 
       
 
-      bool hasColmap = (await runCommand('colmap',[])).toString().trim().contains("COLMAP");
+      // bool hasColmap = (await runCommand('colmap',[])).toString().trim().contains("COLMAP");
       
       // bool hasOpenMVS = await Directory("~/.simple_photogrammetry_gui_dependencies/openMVS").exists();
       // bool hasRemoveOutliers = await File("~/.simple_photogrammetry_gui_dependencies/removeOutliers").exists();
       // bool hasReconstructMesh = await File("~/.simple_photogrammetry_gui_dependencies/reconstructMesh").exists();
       // bool hasTexRecon = await File("~/.simple_photogrammetry_gui_dependencies/texrecon").exists();
       
-      hasAllDependencies = hasColmap;// && hasOpenMVS && hasRemoveOutliers && hasReconstructMesh && hasTexRecon;
+      hasAllDependencies = true;// && hasOpenMVS && hasRemoveOutliers && hasReconstructMesh && hasTexRecon;
 
     }
     if (!hasAllDependencies) {
@@ -518,7 +563,7 @@ class ScanningScreenModel {
                 },
                 child: Text(
                   "Yes (CUDA)",
-                  style: TextStyle(color: view.colorScheme.onBackground, fontSize: 18),
+                  style: TextStyle(color: HexColor("#ebdbb2"), fontSize: 18),
                 )),
             TextButton(
                 onPressed: () async {
@@ -534,7 +579,7 @@ class ScanningScreenModel {
                 },
                 child: Text(
                   "Yes${Platform.isLinux ? "" : " (No CUDA)"}",
-                  style: TextStyle(color: view.colorScheme.onBackground, fontSize: 18),
+                  style: TextStyle(color: HexColor("#ebdbb2"), fontSize: 18),
                 )),
             TextButton(
                 onPressed: () {
@@ -542,9 +587,10 @@ class ScanningScreenModel {
                 },
                 child: Text(
                   "No",
-                  style: TextStyle(color: view.colorScheme.onBackground, fontSize: 18),
+                  style: TextStyle(color: HexColor("#ebdbb2"), fontSize: 18),
                 ))
           ],
+          
           /*desc: Platform.isLinux ? "This requires the application to be run with sudo" : "This requires the application to be run as adminstrator"*/);
     }
     return hasAllDependencies;
@@ -602,14 +648,14 @@ class ScanningScreenModel {
   }
 
   permissionErrorAlert(var view) {
-    showAlert(view.colorScheme, view.context, Platform.isLinux ? "You have to run this application with sudo to install dependencies" : "You have to run this application as adminstrator to install dependencies", [
+    showAlert(view.colorScheme, view.context, "Permission Error - Permission Denied", [
       TextButton(
           onPressed: () {
             Navigator.pop(view.context);
           },
           child: Text(
             "Ok",
-            style: TextStyle(color: view.colorScheme.onBackground),
+            style: TextStyle(color: HexColor("#ebdbb2")),
           ))
     ]);
   }
