@@ -39,8 +39,8 @@ Lastly, click start. The finished result will be in the output folder with the n
 
 ### Linux:
 
-    This is experimental - so it could have issues,
-    but if it works it should compile all dependencies, collect them and set them up, and finally package everything into a nice .AppImage
+This is experimental - so it could have issues,
+but if it works it should compile all dependencies, collect them and set them up, and finally package everything into a nice .AppImage
     
     ```
     git clone https://github.com/edin45/simple_photogrammetry_gui.git

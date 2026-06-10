@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
@@ -176,13 +177,22 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                             const Padding(padding: EdgeInsets.all(10.0)),
                             TextButton(
                               onPressed: () async {
-                                String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-                
-                                if (selectedDirectory == null) {
-                                  // User canceled the picker
-                                } else {
-                                  imageFolder = selectedDirectory;
+
+                                final String? directoryPath = await getDirectoryPath();
+                                if (directoryPath == null) {
+                                  // Operation was canceled by the user.
+                                  // return;
+                                }else{
+                                  imageFolder = directoryPath;
                                 }
+
+                                // String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+                
+                                // if (selectedDirectory == null) {
+                                //   // User canceled the picker
+                                // } else {
+                                //   imageFolder = selectedDirectory;
+                                // }
                                 setState(() {});
                               },
                               style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
@@ -209,13 +219,22 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                             const Padding(padding: EdgeInsets.all(10.0)),
                             TextButton(
                               onPressed: () async {
-                                String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-                
-                                if (selectedDirectory == null) {
-                                  // User canceled the picker
+
+                                final String? directoryPath = await getDirectoryPath();
+                                if (directoryPath == null) {
+                                  // Operation was canceled by the user.
+                                  // return;
                                 } else {
-                                  outputFolder = selectedDirectory;
+                                  outputFolder = directoryPath;
                                 }
+
+                                // String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+                
+                                // if (selectedDirectory == null) {
+                                //   // User canceled the picker
+                                // } else {
+                                //   outputFolder = selectedDirectory;
+                                // }
                                 setState(() {});
                               },
                               style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
