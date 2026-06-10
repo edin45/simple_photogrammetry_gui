@@ -3,6 +3,8 @@ import 'package:simple_photogrammetry_gui/scanningScreen/scanningScreenModel.dar
 import 'package:simple_photogrammetry_gui/scanningScreen/scanningScreenView.dart';
 import 'package:window_manager/window_manager.dart';
 
+String global_max_cpu_threads = "-1";
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
