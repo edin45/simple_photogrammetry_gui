@@ -8,8 +8,6 @@ Windows Users: You will be prompted to download missing dependencies, click **In
 
 Linux Users: All dependencies are packaged in the .AppImage - so this step does not apply
 
-![alt text](https://raw.githubusercontent.com/edin45/simple_photogrammetry_gui/master/readme_imgs/install_dependencies.jpg)
-
 Then click "Select Image Folder" to select the folder containing the images.
 
 Aftewards click **Select Output Folder** to select the folder where the result should be stored (There should be plenty of disk space in the location of the output folder).
