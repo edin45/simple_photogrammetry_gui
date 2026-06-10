@@ -6,6 +6,7 @@ import 'package:process_run/shell.dart';
 
 import 'package:flutter/material.dart';
 import 'package:isolate_current_directory/isolate_current_directory.dart';
+import 'package:simple_photogrammetry_gui/main.dart';
 import 'package:simple_photogrammetry_gui/runCommand.dart';
 import 'package:system_info2/system_info2.dart';
 import 'package:path/path.dart' as p;
@@ -23,7 +24,7 @@ class ScanningScreenModel {
     }
   }
 
-  showAlert(ColorScheme colorScheme, BuildContext context, String title, List<Widget> buttons, {String? desc, Widget? content}) {
+  showAlert(ColorScheme colorScheme, BuildContext context, String title, List<Widget> buttons, {String? desc, Widget? content, double height = 100}) {
     var alert = AlertDialog(
       backgroundColor: HexColor("#282828"),
       title: Text(
@@ -31,7 +32,7 @@ class ScanningScreenModel {
         style: TextStyle(color: HexColor("#ebdbb2")),
       ),
       content: SizedBox(
-        height: 100,
+        height: height,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -133,11 +134,15 @@ class ScanningScreenModel {
 
       view.status = "1/$totalStepNumber Sift Extraction";
       view.setState(() {});
+
+      print("Threads: $global_max_cpu_threads");
+
       await runCommand(colmapPath, [
          "feature_extractor",
          "--database_path", databasePath,
          "--image_path", imagesPath,
          "--FeatureExtraction.use_gpu", "${view.useGpu ? 1 : 0}",
+         "--FeatureExtraction.num_threads", global_max_cpu_threads,
       ]);
 
       if (view.stop) {
@@ -152,6 +157,7 @@ class ScanningScreenModel {
          "exhaustive_matcher",
          "--FeatureMatching.use_gpu", "${view.useGpu ? 1 : 0}",
          "--database_path", databasePath,
+         "--FeatureMatching.num_threads", global_max_cpu_threads,
       ]);
 
       // await runCommand("& \"$colmapPath\" exhaustive_matcher --FeatureMatching.use_gpu ${view.useGpu ? 1 : 0} --database_path \"$databasePath\"", []);

@@ -10,6 +10,8 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:roundcheckbox/roundcheckbox.dart';
 import 'package:simple_photogrammetry_gui/TitleBar/TitleBar.dart';
+import 'package:simple_photogrammetry_gui/main.dart';
+import 'package:simple_photogrammetry_gui/runCommand.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:hexcolor/hexcolor.dart';
 
@@ -65,7 +67,45 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
             Column(
               children: [
                 TitleBar(),
-                Align(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: GestureDetector(
+                            onTap: () {
+                              var alert = AlertDialog(
+                                backgroundColor: HexColor("#282828"),
+                                title: Text(
+                                  "Scan Settings:",
+                                  style: TextStyle(color: HexColor("#ebdbb2")),
+                                ),
+                                content: Container(
+                                  height: 200,
+                                  width: 400,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      settingWidget("Max Cpu Threads (can help with ram usage) -1 == All",global_max_cpu_threads, (value) {
+                                        global_max_cpu_threads = value;
+                                      })
+                                    ],
+                                  ),
+                                ),
+                                
+                              );
+                              showDialog(context: context, builder: (_) => alert);
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Icon(Icons.settings,color: HexColor("#ebdbb2"),),
+                              ),
+                            ),
+                          ),
+                  ),
+                  Align(
                           alignment: Alignment.topRight,
                           child: GestureDetector(
                             onTap: () {
@@ -95,6 +135,7 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                               ),
                             ),
                           ))
+                ],)
               ],
             ),
             isDownloadingDependencies
@@ -178,14 +219,29 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                             TextButton(
                               onPressed: () async {
 
-                                final String? directoryPath = await getDirectoryPath();
-                                if (directoryPath == null) {
-                                  // Operation was canceled by the user.
-                                  // return;
-                                }else{
-                                  imageFolder = directoryPath;
-                                }
+                                if(Platform.isWindows || (await runCommand("zenity", ["--help"],checkOnlyError: true)) == "") {
 
+                                  final String? directoryPath = await getDirectoryPath();
+                                  if (directoryPath == null) {
+                                    // Operation was canceled by the user.
+                                    // return;
+                                  }else{
+                                    imageFolder = directoryPath;
+                                  }
+
+                                }else{
+                                  widget.model.showAlert(colorScheme, context, "Missing Dependency", [
+                                    TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          "Ok",
+                                          style: TextStyle(color: HexColor("#ebdbb2")),
+                                        ))
+                                  ],desc: "Please install zenity\n\nDebian / Ubuntu: sudo apt-get install zenity\n\nArch: sudo pacman -S zenity", height: 150.0);
+
+                                }
                                 // String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
                 
                                 // if (selectedDirectory == null) {
@@ -220,12 +276,27 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                             TextButton(
                               onPressed: () async {
 
-                                final String? directoryPath = await getDirectoryPath();
-                                if (directoryPath == null) {
-                                  // Operation was canceled by the user.
-                                  // return;
-                                } else {
-                                  outputFolder = directoryPath;
+                                if(Platform.isWindows || (await runCommand("zenity", ["--help"],checkOnlyError: true)) == "") {
+
+                                  final String? directoryPath = await getDirectoryPath();
+                                  if (directoryPath == null) {
+                                    // Operation was canceled by the user.
+                                    // return;
+                                  } else {
+                                    outputFolder = directoryPath;
+                                  }
+
+                                }else{
+                                  widget.model.showAlert(colorScheme, context, "Missing Dependency", [
+                                    TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          "Ok",
+                                          style: TextStyle(color: HexColor("#ebdbb2")),
+                                        ))
+                                  ],desc: "Please install zenity\n\nDebian / Ubuntu: sudo apt-get install zenity\n\nArch: sudo pacman -S zenity",height: 150.0);
                                 }
 
                                 // String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
@@ -360,5 +431,27 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
         style: TextStyle(color: HexColor("#ebdbb2"), decoration: TextDecoration.underline),
       ),
     );
+  }
+
+  settingWidget(String hint, String startingText, Function(String value) onChange) {
+    TextEditingController controller = TextEditingController();
+    controller.text = startingText;
+    return TextField(decoration: InputDecoration(label: Text(hint,style: TextStyle(color: HexColor("#ebdbb2"),)),),controller: controller,onChanged: (value) {
+      if(value == "") {
+      }else{
+        onChange(value);
+      }
+    },style: TextStyle(color: HexColor("#ebdbb2")),);
+    //  GestureDetector(
+    //   onTap: () async {
+    //     if (!await launchUrl(Uri.parse(url))) {
+    //       throw Exception('Could not launch $url');
+    //     }
+    //   },
+    //   child: Text(
+    //     text,
+    //     style: TextStyle(color: HexColor("#ebdbb2"), decoration: TextDecoration.underline),
+    //   ),
+    // );
   }
 }
