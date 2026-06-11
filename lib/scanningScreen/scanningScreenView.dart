@@ -325,52 +325,11 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            TextButton(
-                              onPressed: () async {
-                                if (imageFolder == "") {
-                                  widget.model.showAlert(colorScheme, context, "You have to select an image folder", [
-                                    TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                          "Ok",
-                                          style: TextStyle(color: HexColor("#ebdbb2")),
-                                        ))
-                                  ]);
-                                } else if (outputFolder == "") {
-                                  widget.model.showAlert(colorScheme, context, "You have to select an output folder", [
-                                    TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                          "Ok",
-                                          style: TextStyle(color: HexColor("#ebdbb2")),
-                                        ))
-                                  ]);
-                                } else {
-                                  stop = false;
-                                  widget.model.startScanningProcess(this, imageFolder, outputFolder);
-                                }
-                              },
-                              //  : () {
-                              //   widget.model.startScanningProcess(this, imageFolder, outputFolder);
-                              // },
-                              style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
-                                if (states.contains(MaterialState.pressed)) {
-                                  return HexColor("#83a598");
-                                }
-                                return HexColor("#458588");
-                              })),
-                              child: Text(
-                                // hasAllDependencies ? 
-                                'Start',
-                                //  : "Install Dependencies (Needs Adminstrator rights)",
-                                style: TextStyle(color: HexColor("#282828")),
-                              ),
-                            ),
+                            running ? Container() : startButtonWidget("Start - High Quality",HexColor("#d79921"),HexColor("#fabd2f"),0),
                             const Padding(padding: EdgeInsets.all(8)),
+                            running ? Container() : startButtonWidget("Start - Medium Quality",HexColor("#458588"),HexColor("#83a598"),1),
+                            const Padding(padding: EdgeInsets.all(8)),
+                            running ? Container() : startButtonWidget("Start - Low Quality",HexColor("#98971a"),HexColor("#b8bb26"),2),
                             running
                                 ? TextButton(
                                     onPressed: () async {
@@ -453,5 +412,53 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
     //     style: TextStyle(color: HexColor("#ebdbb2"), decoration: TextDecoration.underline),
     //   ),
     // );
+  }
+
+  startButtonWidget(String text, Color buttonColor, Color buttonColorPress, int qualityLevel) {
+    return TextButton(
+                              onPressed: () async {
+                                if (imageFolder == "") {
+                                  widget.model.showAlert(colorScheme, context, "You have to select an image folder", [
+                                    TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          "Ok",
+                                          style: TextStyle(color: HexColor("#ebdbb2")),
+                                        ))
+                                  ]);
+                                } else if (outputFolder == "") {
+                                  widget.model.showAlert(colorScheme, context, "You have to select an output folder", [
+                                    TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          "Ok",
+                                          style: TextStyle(color: HexColor("#ebdbb2")),
+                                        ))
+                                  ]);
+                                } else {
+                                  stop = false;
+                                  widget.model.startScanningProcess(this, imageFolder, outputFolder,qualityLevel);
+                                }
+                              },
+                              //  : () {
+                              //   widget.model.startScanningProcess(this, imageFolder, outputFolder);
+                              // },
+                              style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
+                                if (states.contains(MaterialState.pressed)) {
+                                  return buttonColorPress;
+                                }
+                                return buttonColor;
+                              })),
+                              child: Text(
+                                // hasAllDependencies ? 
+                                text,
+                                //  : "Install Dependencies (Needs Adminstrator rights)",
+                                style: TextStyle(color: HexColor("#282828")),
+                              ),
+                            );
   }
 }
