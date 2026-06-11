@@ -54,7 +54,7 @@ class ScanningScreenModel {
     showDialog(context: context, builder: (_) => alert);
   }
 
-  startScanningProcess(var view, String imagesPath, String outputPath) async {
+  startScanningProcess(var view, String imagesPath, String outputPath, int qualityLevel) async {
     
     final directory = (await getApplicationSupportDirectory()).path;
 
@@ -65,6 +65,10 @@ class ScanningScreenModel {
       // String texReconPath = Platform.isWindows ? '$directory${slash}' : './';
       String decimateMeshPath = Platform.isWindows ? '$directory${slash}' : '$appDir/';
       String textureMeshPath = Platform.isWindows ? '$directory${slash}' : '$appDir/';
+      String PoissonRecon = Platform.isWindows ? '$directory${slash}PoissonRecon.exe' : '$appDir/PoissonRecon';
+      String SurfaceTrimmer = Platform.isWindows ? '$directory${slash}SurfaceTrimmer.exe' : '$appDir/SurfaceTrimmer';
+      String mvs_texturing = Platform.isWindows ? '$directory${slash}texrecon.exe' : '$appDir/texrecon';
+      
       
       
       String databasePath = "$outputPath${slash}temp${slash}database.db";
@@ -289,7 +293,9 @@ class ScanningScreenModel {
         return;
       }
 
-      int maxImgResolution = 2560;
+      List dense_quality_levels = [2560, 1920, 512];
+
+      int maxImgResolution = dense_quality_levels[qualityLevel];
       int denseRetrys = 1;
 
       // if(Platform.isWindows) {
@@ -348,6 +354,9 @@ class ScanningScreenModel {
         return;
       }
 
+
+      List mesh_recon_quality_levels = [13,10,8];
+
       double decimationFactorMeshRecon = 1;
         int meshReconRetrys = 1;
         
@@ -363,21 +372,33 @@ class ScanningScreenModel {
           view.setState(() {});
         }
 
-        await runCommand("${openMvsPath}ReconstructMesh", [
-         "--input-file", "$outputPath${slash}temp${slash}model_dense.mvs",
-         "--working-folder", "$outputPath${slash}temp",
-         "--output-file", "model_surface.mvs",
+        // await runCommand("${openMvsPath}ReconstructMesh", [
+        //  "--input-file", "$outputPath${slash}temp${slash}model_dense.mvs",
+        //  "--working-folder", "$outputPath${slash}temp",
+        //  "--output-file", "model_surface.mvs",
          
-        //  "--output-file", "$outputPath${slash}temp${slash}model_surface.mvs",
-         "-d", (2.5+(double.parse(meshReconRetrys.toString())/2)).toString(),
-        //  "--integrate-only-roi", "1",
-         "--smooth", "1",
-         "--remove-spurious", "0",
+        // //  "--output-file", "$outputPath${slash}temp${slash}model_surface.mvs",
+        //  "-d", (2.5+(double.parse(meshReconRetrys.toString())/2)).toString(),
+        // //  "--integrate-only-roi", "1",
+        //  "--smooth", "1",
+        //  "--remove-spurious", "0",
+        // ]);
+
+        // ./PoissonRecon --in /workspace/Documents/out_test_2/2/temp/model_dense.ply --out /workspace/Documents/out_test_2/2/temp/model_surface_test_d12.ply --depth 12 --density
+
+        // /workspace/PoissonRecon_1/PoissonRecon/Bin/Linux/SurfaceTrimmer --in /workspace/Documents/out_test_2/2/temp/model_surface_test_d12.ply --out /workspace/Documents/out_test_2/2/temp/model_surface_test_d12_cleaned.ply --trim 6 --ascii
+
+        await runCommand(PoissonRecon, [
+          "--in", "$outputPath${slash}temp${slash}model_dense.ply",
+          "--out", "$outputPath${slash}temp${slash}model_surface.ply",
+          "--depth", "${mesh_recon_quality_levels[qualityLevel]}",
+          "--density"
         ]);
 
         // await runCommand("\"${openMvsPath}ReconstructMesh\" --input-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_surface.mvs\" -d ${(2.5+(double.parse(meshReconRetrys.toString())/2)).toString()}  --integrate-only-roi 1 --smooth 1", []);
         decimationFactorMeshRecon=decimationFactorMeshRecon*0.7;
-
+        mesh_recon_quality_levels[qualityLevel] = mesh_recon_quality_levels[qualityLevel] > 1 ? mesh_recon_quality_levels[qualityLevel]-1 : 1;
+        
         if(meshReconRetrys == 10) {
           view.status = "Failed, went wrong at Mesh Reconstruction";
             view.setState(() {});
@@ -386,6 +407,18 @@ class ScanningScreenModel {
         meshReconRetrys++;
 
         }
+
+        if (view.stop) {
+          stop(view);
+          return;
+        }
+
+        await runCommand(SurfaceTrimmer, [
+          "--in", "$outputPath${slash}temp${slash}model_surface.ply",
+          "--out", "$outputPath${slash}temp${slash}model_surface_cleaned.ply",
+          "--trim", "4",
+          "--ascii"
+        ]);
       
       if (view.stop) {
         stop(view);
@@ -398,55 +431,70 @@ class ScanningScreenModel {
       int texreconRetrys = 1;
 
       
+      // texrecon --keep_unseen_faces ./project.nvm /workspace/Documents/out_test_2/2/temp/model_surface_test_d12_cleaned.ply /workspace/Documents/out_test_2/model_surface_test_d12_cleaned_textured6
 
-      while(!File("$outputPath${slash}textured.obj").existsSync()) {
-
-        if (view.stop) {
-        stop(view);
-        return;
-      }
-
-        if(texreconRetrys > 1) {
-          view.status = "10/$totalStepNumber Texturing Mesh, ran out of memory retrying with lowered resolution (decimation-factor: ${1+((texreconRetrys-1)/2)})";
-          view.setState(() {});
-          // await runCommand("\"${resizeImagesPath}resizeImages\" -i \"${imagesPath}\" -r ${texrecon_retrys*0.7}", []);
-          await runCommand("${decimateMeshPath}decimateMesh", [
-            "-m", "$outputPath${slash}temp${slash}model_surface.ply",
-            "-o", "$outputPath${slash}temp",
-            "-t", "${1+((texreconRetrys-1)/2)}"
-          ]);
-          // await runCommand("\"${decimateMeshPath}decimateMesh\" -m \"$outputPath${slash}temp${slash}model_surface.ply\" -o \"$outputPath${slash}temp\" -t ${1+((texreconRetrys-1)/2)}", []);
-        }
-
-        // await runCommand("${textureMeshPath}${Platform.isWindows ? "textureMesh" : "run_texturing.sh"}", [
-        //     "-m", texreconRetrys > 1 ? "$outputPath${slash}temp${slash}model_surface_decimated.ply" : "$outputPath${slash}temp${slash}model_surface.ply",
-        //     "-p", "$imagesPath${slash}project.nvm",
-        //     "-o", outputPath
-        // ],workingFolder: imagesPath);
-
-        await runCommand("${openMvsPath}TextureMesh", [
-          "--input-file", "$outputPath${slash}temp${slash}model_colmap.mvs",
-          "--mesh-file", "$outputPath${slash}temp${slash}model_surface.ply",
-          "--working-folder", "$outputPath${slash}temp",
-          "--output-file", "$outputPath${slash}textured.mvs",
-          "--export-type", "obj",
-          "--decimate", "${1/(1+((texreconRetrys-1)/6))}",
-          "--resolution-level", "${(texreconRetrys-1)}"
+      await runCommand(mvs_texturing, [
+          "--keep_unseen_faces",
+          "$imagesPath${slash}project.nvm",
+          "$outputPath${slash}temp${slash}model_surface_cleaned.ply",
+          "$outputPath${slash}textured"
+          
         ],workingFolder: imagesPath);
 
-        // await runCommand("${textureMeshPath}textureMesh -m ${texreconRetrys > 1 ? "\"$outputPath${slash}temp${slash}model_surface_decimated.ply\"" : "\"$outputPath${slash}temp${slash}model_surface.ply\""} -p \"$imagesPath${slash}project.nvm\" -o \"$outputPath\"", [],workingFolder: imagesPath);
-
-        // await runCommand("\"${openMvsPath}TextureMesh\" --input-file \"$outputPath${slash}temp${slash}model_surface.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}textured.mvs\" --export-type obj --decimate ${1/(1+((texreconRetrys-1)/6))}  --resolution-level ${(texreconRetrys-1)}", []);
-
-        if(texreconRetrys == 8){
+        if(!File("$outputPath${slash}textured.obj").existsSync()) {
           view.status = "Failed, went wrong at texturing mesh";
           view.setState(() {});
           return;
         }
 
-        texreconRetrys++;
+      // while(!File("$outputPath${slash}textured.obj").existsSync()) {
 
-      }
+      //   if (view.stop) {
+      //   stop(view);
+      //   return;
+      // }
+
+      //   if(texreconRetrys > 1) {
+      //     view.status = "10/$totalStepNumber Texturing Mesh, ran out of memory retrying with lowered resolution (decimation-factor: ${1+((texreconRetrys-1)/2)})";
+      //     view.setState(() {});
+      //     // await runCommand("\"${resizeImagesPath}resizeImages\" -i \"${imagesPath}\" -r ${texrecon_retrys*0.7}", []);
+      //     await runCommand("${decimateMeshPath}decimateMesh", [
+      //       "-m", "$outputPath${slash}temp${slash}model_surface.ply",
+      //       "-o", "$outputPath${slash}temp",
+      //       "-t", "${1+((texreconRetrys-1)/2)}"
+      //     ]);
+      //     // await runCommand("\"${decimateMeshPath}decimateMesh\" -m \"$outputPath${slash}temp${slash}model_surface.ply\" -o \"$outputPath${slash}temp\" -t ${1+((texreconRetrys-1)/2)}", []);
+      //   }
+
+      //   // await runCommand("${textureMeshPath}${Platform.isWindows ? "textureMesh" : "run_texturing.sh"}", [
+      //   //     "-m", texreconRetrys > 1 ? "$outputPath${slash}temp${slash}model_surface_decimated.ply" : "$outputPath${slash}temp${slash}model_surface.ply",
+      //   //     "-p", "$imagesPath${slash}project.nvm",
+      //   //     "-o", outputPath
+      //   // ],workingFolder: imagesPath);
+
+      //   await runCommand("${openMvsPath}TextureMesh", [
+      //     "--input-file", "$outputPath${slash}temp${slash}model_colmap.mvs",
+      //     "--mesh-file", "$outputPath${slash}temp${slash}model_surface.ply",
+      //     "--working-folder", "$outputPath${slash}temp",
+      //     "--output-file", "$outputPath${slash}textured.mvs",
+      //     "--export-type", "obj",
+      //     "--decimate", "${1/(1+((texreconRetrys-1)/6))}",
+      //     "--resolution-level", "${(texreconRetrys-1)}"
+      //   ],workingFolder: imagesPath);
+
+      //   // await runCommand("${textureMeshPath}textureMesh -m ${texreconRetrys > 1 ? "\"$outputPath${slash}temp${slash}model_surface_decimated.ply\"" : "\"$outputPath${slash}temp${slash}model_surface.ply\""} -p \"$imagesPath${slash}project.nvm\" -o \"$outputPath\"", [],workingFolder: imagesPath);
+
+      //   // await runCommand("\"${openMvsPath}TextureMesh\" --input-file \"$outputPath${slash}temp${slash}model_surface.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}textured.mvs\" --export-type obj --decimate ${1/(1+((texreconRetrys-1)/6))}  --resolution-level ${(texreconRetrys-1)}", []);
+
+      //   if(texreconRetrys == 8){
+      //     view.status = "Failed, went wrong at texturing mesh";
+      //     view.setState(() {});
+      //     return;
+      //   }
+
+      //   texreconRetrys++;
+
+      // }
 
       // while(!File("$outputPath${slash}textured.obj").existsSync()) {
 
