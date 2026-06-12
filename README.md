@@ -60,3 +60,5 @@ but if it works it should compile all dependencies, collect them and set them up
  Colmap: https://colmap.github.io/
  
  mvs-texturing: https://github.com/nmoehrle/mvs-texturing
+
+ PoissonRecon: https://github.com/mkazhdan/PoissonRecon

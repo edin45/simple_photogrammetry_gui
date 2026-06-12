@@ -67,7 +67,7 @@ class ScanningScreenModel {
       String textureMeshPath = Platform.isWindows ? '$directory${slash}' : '$appDir/';
       String PoissonRecon = Platform.isWindows ? '$directory${slash}PoissonRecon.exe' : '$appDir/PoissonRecon';
       String SurfaceTrimmer = Platform.isWindows ? '$directory${slash}SurfaceTrimmer.exe' : '$appDir/SurfaceTrimmer';
-      String mvs_texturing = Platform.isWindows ? '$directory${slash}texrecon.exe' : '$appDir/texrecon';
+      String mvs_texturing = Platform.isWindows ? '$directory${slash}texrecon${slash}texrecon.exe' : '$appDir/texrecon';
       
       
       
@@ -576,12 +576,15 @@ class ScanningScreenModel {
       bool hasOpenMVS = await Directory("$directory${slash}openMVS").exists();
       // bool hasRemoveOutliers = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}removeOutliers.exe").exists();
       // bool hasReconstructMesh = await File("C:${slash}Program Files${slash}simple_photogrammetry_gui${slash}reconstructMesh.exe").exists();
-      bool hasTexRecon = await File("$directory${slash}texrecon.exe").exists();
+      bool hasTexRecon = await File("$directory${slash}texrecon${slash}texrecon.exe").exists();
       bool hasResizeImages = await File("$directory${slash}resizeImages.exe").exists();
       bool hasDecimateMesh = await File("$directory${slash}decimateMesh.exe").exists();
       bool hasTextureMesh = await File("$directory${slash}textureMesh.exe").exists();
+      bool hasPoissonRecon = await File("$directory${slash}PoissonRecon.exe").exists();
+      bool hasSurfaceTrimmer = await File("$directory${slash}SurfaceTrimmer.exe").exists();
+      // bool hasTexRecon = await File("$directory${slash}SurfaceTrimmer.exe").exists();
 
-      hasAllDependencies = hasColmap && hasOpenMVS && hasTexRecon && hasResizeImages && hasDecimateMesh && hasTextureMesh;
+      hasAllDependencies = hasColmap && hasOpenMVS && hasTexRecon && hasResizeImages && hasDecimateMesh && hasTextureMesh && hasPoissonRecon && hasSurfaceTrimmer;
     }
     else if (Platform.isLinux) {
 
@@ -679,6 +682,8 @@ class ScanningScreenModel {
       await runCommand('powershell -c "Expand-Archive -Path ./textureMesh.zip -DestinationPath \'$directory\'"', []);
 
       await runCommand('powershell -c "Expand-Archive -Path ./texrecon.zip -DestinationPath \'$directory\'"', []);
+
+      await runCommand('powershell -c "Expand-Archive -Path ./PoissonRecon.zip -DestinationPath \'$directory\'"', []);
 
       await runCommand('powershell -c "Rename-Item -Path \'$directory${slash}colmap${slash}${cuda ? 'colmap-x64-windows-cuda' : 'colmap-x64-windows-nocuda'}\' -NewName \'$directory${slash}colmap${slash}colmap\'"', []);
 
