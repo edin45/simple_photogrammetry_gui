@@ -219,7 +219,10 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                             TextButton(
                               onPressed: () async {
 
-                                if(Platform.isWindows || (await runCommand("zenity", ["--help"],checkOnlyError: true)) == "") {
+                                
+
+
+                                if(Platform.isWindows || await checkZenity()) {
 
                                   final String? directoryPath = await getDirectoryPath();
                                   if (directoryPath == null) {
@@ -276,7 +279,7 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                             TextButton(
                               onPressed: () async {
 
-                                if(Platform.isWindows || (await runCommand("zenity", ["--help"],checkOnlyError: true)) == "") {
+                                if(Platform.isWindows || await checkZenity()) {
 
                                   final String? directoryPath = await getDirectoryPath();
                                   if (directoryPath == null) {
@@ -460,5 +463,17 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                                 style: TextStyle(color: HexColor("#282828")),
                               ),
                             );
+  }
+
+  checkZenity() async {
+    bool hasZenity = true;
+
+    try{
+      hasZenity = (await runCommand("zenity", ["--help"],checkOnlyError: true)) == "";
+    }catch(e) {
+      hasZenity = false;
+    }
+
+    return hasZenity;
   }
 }
