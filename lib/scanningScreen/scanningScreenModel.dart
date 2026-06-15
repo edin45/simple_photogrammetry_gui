@@ -54,13 +54,14 @@ class ScanningScreenModel {
     showDialog(context: context, builder: (_) => alert);
   }
 
-  startScanningProcess(var view, String imagesPath, String outputPath, int qualityLevel) async {
+  startScanningProcess(var view, String imagesPath, String outputPath, int qualityLevel, bool photogrammetry_or_splat) async {
     
     final directory = (await getApplicationSupportDirectory()).path;
 
     if ((await checkDependencies(view))) {
       String appDir = _getAppDir();
       String colmapPath = Platform.isWindows ? '$directory${slash}colmap${slash}COLMAP.bat' : '$appDir/colmap';
+      String brushPath = Platform.isWindows ? '$directory${slash}colmap${slash}COLMAP.bat' : '$appDir/brush/brush_app';
       String openMvsPath = Platform.isWindows ? '$directory${slash}openMVS${slash}' : '$appDir/OpenMVS/';
       // String texReconPath = Platform.isWindows ? '$directory${slash}' : './';
       String decimateMeshPath = Platform.isWindows ? '$directory${slash}' : '$appDir/';
@@ -74,6 +75,10 @@ class ScanningScreenModel {
       String databasePath = "$outputPath${slash}temp${slash}database.db";
       String glomapDatabasePath = "$outputPath${slash}temp${slash}global_database.db";
       int totalStepNumber = 10;
+
+      if(photogrammetry_or_splat) {
+        totalStepNumber = 4;
+      }
 
       var shell = Shell();
 
@@ -136,155 +141,196 @@ class ScanningScreenModel {
         return;
       }
 
-      view.status = "1/$totalStepNumber Sift Extraction";
-      view.setState(() {});
-
-      print("Threads: $global_max_cpu_threads");
-
-      await runCommand(colmapPath, [
-         "feature_extractor",
-         "--database_path", databasePath,
-         "--image_path", imagesPath,
-         "--FeatureExtraction.use_gpu", "${view.useGpu ? 1 : 0}",
-         "--FeatureExtraction.num_threads", global_max_cpu_threads,
-      ]);
-
-      if (view.stop) {
-        stop(view);
-        return;
-      }
-
-      view.status = "2/$totalStepNumber SiftMatching";
-      view.setState(() {});
-
-      await runCommand(colmapPath, [
-         "exhaustive_matcher",
-         "--FeatureMatching.use_gpu", "${view.useGpu ? 1 : 0}",
-         "--database_path", databasePath,
-         "--FeatureMatching.num_threads", global_max_cpu_threads,
-      ]);
-
-      // await runCommand("& \"$colmapPath\" exhaustive_matcher --FeatureMatching.use_gpu ${view.useGpu ? 1 : 0} --database_path \"$databasePath\"", []);
-
-      if (view.stop) {
-        stop(view);
-        return;
-      }
-
-      view.status = "3/$totalStepNumber Aligning Cameras with Glomap";
-      view.setState(() {});
-
-      final sourceFile = File(databasePath);
+      final sourceFile = File("$outputPath${slash}temp${slash}model_comap.mvs");
     
-      if (await sourceFile.exists()) {
-        await sourceFile.copy(glomapDatabasePath);
-      }
+      if (!(await sourceFile.exists())) {
 
-      // // await runCommand('powershell -c "cp $databasePath $glomapDatabasePath"', []);
-      // if(Platform.isWindows) {
-      //   await runCommand('powershell -c "cp \'$databasePath\' \'$glomapDatabasePath\'"', []);
-      // }else{
-      //   // await runCommand('cp $databasePath $glomapDatabasePath', []);
+        view.status = "1/$totalStepNumber Sift Extraction";
+        view.setState(() {});
+
+        print("Threads: $global_max_cpu_threads");
+
+        await runCommand(colmapPath, [
+          "feature_extractor",
+          "--database_path", databasePath,
+          "--image_path", imagesPath,
+          "--FeatureExtraction.use_gpu", "${view.useGpu ? 1 : 0}",
+          "--FeatureExtraction.num_threads", global_max_cpu_threads,
+        ]);
+
+        if (view.stop) {
+          stop(view);
+          return;
+        }
+
+        view.status = "2/$totalStepNumber SiftMatching";
+        view.setState(() {});
+
+        await runCommand(colmapPath, [
+          "exhaustive_matcher",
+          "--FeatureMatching.use_gpu", "${view.useGpu ? 1 : 0}",
+          "--database_path", databasePath,
+          "--FeatureMatching.num_threads", global_max_cpu_threads,
+        ]);
+
+        // await runCommand("& \"$colmapPath\" exhaustive_matcher --FeatureMatching.use_gpu ${view.useGpu ? 1 : 0} --database_path \"$databasePath\"", []);
+
+        if (view.stop) {
+          stop(view);
+          return;
+        }
+
+        view.status = "3/$totalStepNumber Aligning Cameras with Glomap";
+        view.setState(() {});
+
+        final sourceFile = File(databasePath);
+      
+        if (await sourceFile.exists()) {
+          await sourceFile.copy(glomapDatabasePath);
+        }
+
+        // // await runCommand('powershell -c "cp $databasePath $glomapDatabasePath"', []);
+        // if(Platform.isWindows) {
+        //   await runCommand('powershell -c "cp \'$databasePath\' \'$glomapDatabasePath\'"', []);
+        // }else{
+        //   // await runCommand('cp $databasePath $glomapDatabasePath', []);
+          
+        // }
+
+        await runCommand(colmapPath, [
+          "view_graph_calibrator",
+          "--database_path", glomapDatabasePath,
+        ]);
+
         
-      // }
 
-      await runCommand(colmapPath, [
-         "view_graph_calibrator",
-         "--database_path", glomapDatabasePath,
-      ]);
+        if(photogrammetry_or_splat) {
 
-      await runCommand(colmapPath, [
-         "global_mapper",
-         "--database_path", glomapDatabasePath,
-         "--image_path", imagesPath,
-         "--output_path", "$outputPath${slash}temp${slash}sparse"
-      ]);
+          await runCommand(colmapPath, [
+            "global_mapper",
+            "--database_path", glomapDatabasePath,
+            "--image_path", imagesPath,
+            "--output_path", imagesPath
+          ]);
 
-      // await runCommand("& \"$colmapPath\" global_mapper --database_path \"$glomapDatabasePath\" --image_path \"$imagesPath\" --output_path \"$outputPath${slash}temp${slash}sparse\"", []);
+          view.status = "4/$totalStepNumber Training Splat (Close Viewer to Finish)";
+          view.setState(() {});
 
-      if (view.stop) {
-        stop(view);
-        return;
+          await runCommand(brushPath, [
+            imagesPath,
+            //  "--image_path", imagesPath,
+
+
+            "--with-viewer",
+          ],workingFolder: outputPath);
+
+          view.status = "Done";
+          view.setState(() {});
+          return;
+
+        }else{
+
+        await runCommand(colmapPath, [
+          "global_mapper",
+          "--database_path", glomapDatabasePath,
+          "--image_path", imagesPath,
+          "--output_path", "$outputPath${slash}temp${slash}sparse"
+        ]);
+
+        // await runCommand(colmapPath, [
+        //   "mapper",
+        //   "--database_path", glomapDatabasePath,
+        //   "--image_path", imagesPath,
+        //   "--output_path", "$outputPath${slash}temp${slash}sparse"
+        // ]);
+
+        // await runCommand("& \"$colmapPath\" global_mapper --database_path \"$glomapDatabasePath\" --image_path \"$imagesPath\" --output_path \"$outputPath${slash}temp${slash}sparse\"", []);
+
+        if (view.stop) {
+          stop(view);
+          return;
+        }
+
+        view.status = "4/$totalStepNumber Undistorting Images";
+        view.setState(() {});
+
+        await runCommand(colmapPath, [
+          "image_undistorter",
+          "--image_path", imagesPath,
+
+
+          "--input_path", "$outputPath${slash}temp${slash}sparse${slash}0",
+          
+          "--output_path", "$outputPath${slash}temp${slash}dense",
+
+          "--output_type", "COLMAP",
+        ]);
+
+        // await runCommand("& \"$colmapPath\" image_undistorter --image_path \"$imagesPath\" --input_path \"$outputPath${slash}temp${slash}sparse${slash}0\" --output_path \"$outputPath${slash}temp${slash}dense\" --output_type COLMAP", []);
+
+        if (view.stop) {
+          stop(view);
+          return;
+        }
+
+        view.status = "5.1/$totalStepNumber Converting Project";
+        view.setState(() {});
+
+        await runCommand(colmapPath, [
+          "model_converter",
+          //  "--image_path", imagesPath,
+
+
+          "--input_path", "$outputPath${slash}temp${slash}dense${slash}sparse",
+          
+          "--output_path", "$outputPath${slash}temp${slash}dense${slash}sparse",
+
+          "--output_type", "TXT",
+        ]);
+
+        // await runCommand("& \"$colmapPath\" model_converter --input_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_type TXT", []);
+
+        if (view.stop) {
+          stop(view);
+          return;
+        }
+
+        view.status = "5.2/$totalStepNumber Converting Project";
+        view.setState(() {});
+
+        await runCommand(colmapPath, [
+          "model_converter",
+          //  "--image_path", imagesPath,
+
+
+          "--input_path", "$outputPath${slash}temp${slash}dense${slash}sparse",
+          
+          "--output_path", "$imagesPath${slash}project.nvm",
+
+          "--output_type", "NVM",
+        ]);
+        //  await runCommand("& \"$colmapPath\" model_converter --input_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_path \"$imagesPath${slash}project.nvm\" --output_type NVM", []);
+
+    //   //  view.status = "5.2/$totalStepNumber Converting Project";
+  //     //  view.setState(() {});
+    //   //  await runCommand("\"$colmapPath\" model_converter --input_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_path \"$imagesPath\" --output_type CAM", []);
+
+        if (view.stop) {
+          stop(view);
+          return;
+        }
+
+        view.status = "6/$totalStepNumber Converting Project to OpenMVS";
+        view.setState(() {});
+
+        await runCommand("${openMvsPath}InterfaceCOLMAP", [
+          //  "model_converter",
+          "--working-folder", "$outputPath${slash}temp${slash}dense",
+          "--input-file", "$outputPath${slash}temp${slash}dense",
+          "--output-file", "$outputPath${slash}temp${slash}model_colmap.mvs"
+        ]);
+
       }
-
-      view.status = "4/$totalStepNumber Undistorting Images";
-      view.setState(() {});
-
-      await runCommand(colmapPath, [
-         "image_undistorter",
-         "--image_path", imagesPath,
-
-
-         "--input_path", "$outputPath${slash}temp${slash}sparse${slash}0",
-         
-         "--output_path", "$outputPath${slash}temp${slash}dense",
-
-         "--output_type", "COLMAP",
-      ]);
-
-      // await runCommand("& \"$colmapPath\" image_undistorter --image_path \"$imagesPath\" --input_path \"$outputPath${slash}temp${slash}sparse${slash}0\" --output_path \"$outputPath${slash}temp${slash}dense\" --output_type COLMAP", []);
-
-      if (view.stop) {
-        stop(view);
-        return;
-      }
-
-      view.status = "5.1/$totalStepNumber Converting Project";
-      view.setState(() {});
-
-      await runCommand(colmapPath, [
-         "model_converter",
-        //  "--image_path", imagesPath,
-
-
-         "--input_path", "$outputPath${slash}temp${slash}dense${slash}sparse",
-         
-         "--output_path", "$outputPath${slash}temp${slash}dense${slash}sparse",
-
-         "--output_type", "TXT",
-      ]);
-
-      // await runCommand("& \"$colmapPath\" model_converter --input_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_type TXT", []);
-
-      if (view.stop) {
-        stop(view);
-        return;
-      }
-
-       view.status = "5.2/$totalStepNumber Converting Project";
-       view.setState(() {});
-
-       await runCommand(colmapPath, [
-         "model_converter",
-        //  "--image_path", imagesPath,
-
-
-         "--input_path", "$outputPath${slash}temp${slash}dense${slash}sparse",
-         
-         "--output_path", "$imagesPath${slash}project.nvm",
-
-         "--output_type", "NVM",
-      ]);
-      //  await runCommand("& \"$colmapPath\" model_converter --input_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_path \"$imagesPath${slash}project.nvm\" --output_type NVM", []);
-
-   //   //  view.status = "5.2/$totalStepNumber Converting Project";
- //     //  view.setState(() {});
-   //   //  await runCommand("\"$colmapPath\" model_converter --input_path \"$outputPath${slash}temp${slash}dense${slash}sparse\" --output_path \"$imagesPath\" --output_type CAM", []);
-
-      if (view.stop) {
-        stop(view);
-        return;
-      }
-
-      view.status = "6/$totalStepNumber Converting Project to OpenMVS";
-      view.setState(() {});
-
-      await runCommand("${openMvsPath}InterfaceCOLMAP", [
-        //  "model_converter",
-         "--working-folder", "$outputPath${slash}temp${slash}dense",
-         "--input-file", "$outputPath${slash}temp${slash}dense",
-         "--output-file", "$outputPath${slash}temp${slash}model_colmap.mvs"
-      ]);
 
       // await runCommand("\"${openMvsPath}InterfaceCOLMAP\" --working-folder \"$outputPath${slash}temp${slash}dense\" --input-file \"$outputPath${slash}temp${slash}dense\" --output-file \"$outputPath${slash}temp${slash}model_colmap.mvs\"", []);
 
@@ -446,6 +492,8 @@ class ScanningScreenModel {
           view.setState(() {});
           return;
         }
+
+      }
 
       // while(!File("$outputPath${slash}textured.obj").existsSync()) {
 

@@ -38,6 +38,8 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
 
   bool hasAllDependencies = false;
 
+  bool photogrammetry_or_splat = false;
+
   @override
   void initState() {
     // TODO: implement initState
@@ -155,226 +157,256 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                   )
                 : Stack(
                     children: [
-                      Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            RoundCheckBox(
-                              size: 30,
-                              isChecked: useGpu,
-                              checkedColor: HexColor("#458588"),
-                              disabledColor: HexColor("#282828"),
-                              uncheckedColor: HexColor("#282828"),
-                              checkedWidget: Icon(
-                                Icons.check,
-                                color: HexColor("#282828"),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 75.0),
+                        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              GestureDetector(
+                                child: AnimatedContainer(duration: const Duration(milliseconds: 80),child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Text("Photogrammetry",style: TextStyle(color: HexColor("#282828")),),
+                                ),decoration: BoxDecoration( color: !photogrammetry_or_splat ? HexColor("#458588") : HexColor("#928374"),borderRadius: BorderRadius.only(topLeft: Radius.circular(10), bottomLeft: Radius.circular(10))),),
+                                onTap: () {
+                                  photogrammetry_or_splat = false;
+                                  setState(() {});
+                                },
                               ),
-                              onTap: (selected) {
-                                useGpu = selected ?? true;
-                                setState(() {});
-                              },
-                            ),
-                            const Padding(padding: EdgeInsets.all(5)),
-                            Text(
-                              'Use GPU when possible',
-                              style: TextStyle(color: HexColor("#ebdbb2"), fontWeight: FontWeight.normal),
-                            )
-                          ],
-                        ),
-                        /*const Padding(padding: EdgeInsets.all(8)),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            RoundCheckBox(
-                              size: 30,
-                              isChecked: reconstructAndTextureMesh,
-                              checkedColor: HexColor("#458588"),
-                              disabledColor: colorScheme.background,
-                              uncheckedColor: colorScheme.background,
-                              checkedWidget: Icon(
-                                Icons.check,
-                                color: HexColor("#282828"),
+                              GestureDetector(
+                                child: AnimatedContainer(duration: const Duration(milliseconds: 80),child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Text("Gaussian Splatting",style: TextStyle(color: HexColor("#282828")),),
+                                ),decoration: BoxDecoration(color: photogrammetry_or_splat ? HexColor("#458588") : HexColor("#928374"),borderRadius: BorderRadius.only(topRight: Radius.circular(10), bottomRight: Radius.circular(10))),),
+                                onTap: () {
+                                  photogrammetry_or_splat = true;
+                                  setState(() {});
+                                },
                               ),
-                              onTap: (selected) {
-                                reconstructAndTextureMesh = (selected ?? false);
-                                setState(() {});
-                              },
-                            ),
-                            const Padding(padding: EdgeInsets.all(5)),
-                            Text(
-                              'Reconstruct & Texture Mesh (High memory usage)',
-                              style: TextStyle(color: HexColor("#ebdbb2"), fontWeight: FontWeight.normal),
-                            )
-                          ],
-                        ),*/
-                        const Padding(padding: EdgeInsets.all(10.0)),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              imageFolder == "" ? "No image folder selected" : imageFolder,
-                              style: TextStyle(color: HexColor("#ebdbb2"), fontWeight: FontWeight.w200),
-                            ),
-                            const Padding(padding: EdgeInsets.all(10.0)),
-                            TextButton(
-                              onPressed: () async {
-
-                                
-
-
-                                if(Platform.isWindows || await checkZenity()) {
-
-                                  final String? directoryPath = await getDirectoryPath();
-                                  if (directoryPath == null) {
-                                    // Operation was canceled by the user.
-                                    // return;
-                                  }else{
-                                    imageFolder = directoryPath;
-                                  }
-
-                                }else{
-                                  widget.model.showAlert(colorScheme, context, "Missing Dependency", [
-                                    TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                          "Ok",
-                                          style: TextStyle(color: HexColor("#ebdbb2")),
-                                        ))
-                                  ],desc: "Please install zenity\n\nDebian / Ubuntu: sudo apt-get install zenity\n\nArch: sudo pacman -S zenity", height: 150.0);
-
-                                }
-                                // String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-                
-                                // if (selectedDirectory == null) {
-                                //   // User canceled the picker
-                                // } else {
-                                //   imageFolder = selectedDirectory;
-                                // }
-                                setState(() {});
-                              },
-                              style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
-                                if (states.contains(MaterialState.pressed)) {
-                                  return HexColor("#83a598");
-                                }
-                                return HexColor("#458588");
-                              })),
-                              child: Text(
-                                '${imageFolder == "" ? "Select" : "Change"} Image Folder',
-                                style: TextStyle(color: HexColor("#282828")),
+                            ],
+                          ),
+                          /*const Padding(padding: EdgeInsets.all(8)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              RoundCheckBox(
+                                size: 30,
+                                isChecked: reconstructAndTextureMesh,
+                                checkedColor: HexColor("#458588"),
+                                disabledColor: colorScheme.background,
+                                uncheckedColor: colorScheme.background,
+                                checkedWidget: Icon(
+                                  Icons.check,
+                                  color: HexColor("#282828"),
+                                ),
+                                onTap: (selected) {
+                                  reconstructAndTextureMesh = (selected ?? false);
+                                  setState(() {});
+                                },
                               ),
-                            ),
-                          ],
-                        ),
-                        const Padding(padding: EdgeInsets.all(8)),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              outputFolder == "" ? "No output folder selected" : outputFolder,
-                              style: TextStyle(color: HexColor("#ebdbb2"), fontWeight: FontWeight.w200),
-                            ),
-                            const Padding(padding: EdgeInsets.all(10.0)),
-                            TextButton(
-                              onPressed: () async {
-
-                                if(Platform.isWindows || await checkZenity()) {
-
-                                  final String? directoryPath = await getDirectoryPath();
-                                  if (directoryPath == null) {
-                                    // Operation was canceled by the user.
-                                    // return;
-                                  } else {
-                                    outputFolder = directoryPath;
-                                  }
-
-                                }else{
-                                  widget.model.showAlert(colorScheme, context, "Missing Dependency", [
-                                    TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                          "Ok",
-                                          style: TextStyle(color: HexColor("#ebdbb2")),
-                                        ))
-                                  ],desc: "Please install zenity\n\nDebian / Ubuntu: sudo apt-get install zenity\n\nArch: sudo pacman -S zenity",height: 150.0);
-                                }
-
-                                // String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-                
-                                // if (selectedDirectory == null) {
-                                //   // User canceled the picker
-                                // } else {
-                                //   outputFolder = selectedDirectory;
-                                // }
-                                setState(() {});
-                              },
-                              style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
-                                if (states.contains(MaterialState.pressed)) {
-                                  return HexColor("#83a598");
-                                }
-                                return HexColor("#458588");
-                              })),
-                              child: Text(
-                                '${outputFolder == "" ? "Select" : "Change"} Output Folder',
-                                style: TextStyle(color: HexColor("#282828")),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Padding(padding: EdgeInsets.all(8)),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            running ? Container() : startButtonWidget("Start - High Quality",HexColor("#d79921"),HexColor("#fabd2f"),0),
-                            const Padding(padding: EdgeInsets.all(8)),
-                            running ? Container() : startButtonWidget("Start - Medium Quality",HexColor("#458588"),HexColor("#83a598"),1),
-                            const Padding(padding: EdgeInsets.all(8)),
-                            running ? Container() : startButtonWidget("Start - Low Quality",HexColor("#98971a"),HexColor("#b8bb26"),2),
-                            running
-                                ? TextButton(
-                                    onPressed: () async {
-                                      stop = true;
-                                      status = "Stopping...";
-                                      setState(() {});
-                                    },
-                                    style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
-                                      if (states.contains(MaterialState.pressed)) {
-                                        return colorScheme.errorContainer;
-                                      }
-                                      return colorScheme.error;
-                                    })),
-                                    child: Text(
-                                      'Stop',
-                                      style: TextStyle(color: colorScheme.onError),
-                                    ),
-                                  )
-                                : Container(),
-                          ],
-                        ),
-                        const Padding(padding: EdgeInsets.all(20)),
-                        Text(
-                          status,
-                          style: TextStyle(fontSize: 21, color: HexColor("#ebdbb2")),
-                        ),
-                        const Padding(padding: EdgeInsets.all(10)),
-                        running
-                            ? Center(
-                                child: SizedBox(
-                                    width: 150,
-                                    child: LinearProgressIndicator(
-                                      backgroundColor: HexColor("#458588"),
-                                      color: HexColor("#282828"),
-                                    )),
+                              const Padding(padding: EdgeInsets.all(5)),
+                              Text(
+                                'Reconstruct & Texture Mesh (High memory usage)',
+                                style: TextStyle(color: HexColor("#ebdbb2"), fontWeight: FontWeight.normal),
                               )
-                            : Container()
-                      ]),
+                            ],
+                          ),*/
+                          const Padding(padding: EdgeInsets.all(10.0)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                imageFolder == "" ? "No image folder selected" : imageFolder,
+                                style: TextStyle(color: HexColor("#ebdbb2"), fontWeight: FontWeight.w200),
+                              ),
+                              const Padding(padding: EdgeInsets.all(10.0)),
+                              TextButton(
+                                onPressed: () async {
+                        
+                                  
+                        
+                        
+                                  if(Platform.isWindows || await checkZenity()) {
+                        
+                                    final String? directoryPath = await getDirectoryPath();
+                                    if (directoryPath == null) {
+                                      // Operation was canceled by the user.
+                                      // return;
+                                    }else{
+                                      imageFolder = directoryPath;
+                                    }
+                        
+                                  }else{
+                                    widget.model.showAlert(colorScheme, context, "Missing Dependency", [
+                                      TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                            "Ok",
+                                            style: TextStyle(color: HexColor("#ebdbb2")),
+                                          ))
+                                    ],desc: "Please install zenity\n\nDebian / Ubuntu: sudo apt-get install zenity\n\nArch: sudo pacman -S zenity", height: 150.0);
+                        
+                                  }
+                                  // String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+                                        
+                                  // if (selectedDirectory == null) {
+                                  //   // User canceled the picker
+                                  // } else {
+                                  //   imageFolder = selectedDirectory;
+                                  // }
+                                  setState(() {});
+                                },
+                                style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
+                                  if (states.contains(MaterialState.pressed)) {
+                                    return HexColor("#83a598");
+                                  }
+                                  return HexColor("#458588");
+                                })),
+                                child: Text(
+                                  '${imageFolder == "" ? "Select" : "Change"} Image Folder',
+                                  style: TextStyle(color: HexColor("#282828")),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Padding(padding: EdgeInsets.all(8)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                outputFolder == "" ? "No output folder selected" : outputFolder,
+                                style: TextStyle(color: HexColor("#ebdbb2"), fontWeight: FontWeight.w200),
+                              ),
+                              const Padding(padding: EdgeInsets.all(10.0)),
+                              TextButton(
+                                onPressed: () async {
+                        
+                                  if(Platform.isWindows || await checkZenity()) {
+                        
+                                    final String? directoryPath = await getDirectoryPath();
+                                    if (directoryPath == null) {
+                                      // Operation was canceled by the user.
+                                      // return;
+                                    } else {
+                                      outputFolder = directoryPath;
+                                    }
+                        
+                                  }else{
+                                    widget.model.showAlert(colorScheme, context, "Missing Dependency", [
+                                      TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                            "Ok",
+                                            style: TextStyle(color: HexColor("#ebdbb2")),
+                                          ))
+                                    ],desc: "Please install zenity\n\nDebian / Ubuntu: sudo apt-get install zenity\n\nArch: sudo pacman -S zenity",height: 150.0);
+                                  }
+                        
+                                  // String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+                                        
+                                  // if (selectedDirectory == null) {
+                                  //   // User canceled the picker
+                                  // } else {
+                                  //   outputFolder = selectedDirectory;
+                                  // }
+                                  setState(() {});
+                                },
+                                style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
+                                  if (states.contains(MaterialState.pressed)) {
+                                    return HexColor("#83a598");
+                                  }
+                                  return HexColor("#458588");
+                                })),
+                                child: Text(
+                                  '${outputFolder == "" ? "Select" : "Change"} Output Folder',
+                                  style: TextStyle(color: HexColor("#282828")),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Padding(padding: EdgeInsets.all(8)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              running ? Container() : startButtonWidget("Start - High Quality",HexColor("#d79921"),HexColor("#fabd2f"),0),
+                              const Padding(padding: EdgeInsets.all(8)),
+                              running ? Container() : startButtonWidget("Start - Medium Quality",HexColor("#458588"),HexColor("#83a598"),1),
+                              const Padding(padding: EdgeInsets.all(8)),
+                              running ? Container() : startButtonWidget("Start - Low Quality",HexColor("#98971a"),HexColor("#b8bb26"),2),
+                              running
+                                  ? TextButton(
+                                      onPressed: () async {
+                                        stop = true;
+                                        status = "Stopping...";
+                                        setState(() {});
+                                      },
+                                      style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
+                                        if (states.contains(MaterialState.pressed)) {
+                                          return colorScheme.errorContainer;
+                                        }
+                                        return colorScheme.error;
+                                      })),
+                                      child: Text(
+                                        'Stop',
+                                        style: TextStyle(color: colorScheme.onError),
+                                      ),
+                                    )
+                                  : Container(),
+                            ],
+                          ),
+                          const Padding(padding: EdgeInsets.all(20)),
+                          Text(
+                            status,
+                            style: TextStyle(fontSize: 21, color: HexColor("#ebdbb2")),
+                          ),
+                          const Padding(padding: EdgeInsets.all(10)),
+                          running
+                              ? Center(
+                                  child: SizedBox(
+                                      width: 150,
+                                      child: LinearProgressIndicator(
+                                        backgroundColor: HexColor("#458588"),
+                                        color: HexColor("#282828"),
+                                      )),
+                                )
+                              : Container()
+                        ]),
+                      ),
                       
                     ],
                   ),
-            Container(),
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              RoundCheckBox(
+                                size: 30,
+                                isChecked: useGpu,
+                                checkedColor: HexColor("#458588"),
+                                disabledColor: HexColor("#282828"),
+                                uncheckedColor: HexColor("#282828"),
+                                checkedWidget: Icon(
+                                  Icons.check,
+                                  color: HexColor("#282828"),
+                                ),
+                                onTap: (selected) {
+                                  useGpu = selected ?? true;
+                                  setState(() {});
+                                },
+                              ),
+                              const Padding(padding: EdgeInsets.all(5)),
+                              Text(
+                                'Use GPU when possible',
+                                style: TextStyle(color: HexColor("#ebdbb2"), fontWeight: FontWeight.normal),
+                              )
+                            ],
+                          ),
+            ),
           ],
         ),
       );
@@ -444,7 +476,7 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                                   ]);
                                 } else {
                                   stop = false;
-                                  widget.model.startScanningProcess(this, imageFolder, outputFolder,qualityLevel);
+                                  widget.model.startScanningProcess(this, imageFolder, outputFolder,qualityLevel, photogrammetry_or_splat);
                                 }
                               },
                               //  : () {
