@@ -78,19 +78,47 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                             onTap: () {
                               var alert = AlertDialog(
                                 backgroundColor: HexColor("#282828"),
-                                title: Text(
-                                  "Scan Settings:",
-                                  style: TextStyle(color: HexColor("#ebdbb2")),
-                                ),
+                                // title: Text(
+                                //   "Scan Settings:",
+                                //   style: TextStyle(color: HexColor("#ebdbb2")),
+                                // ),
                                 content: Container(
-                                  height: 200,
+                                  height: 310,
                                   width: 400,
                                   child: Column(
-                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisSize: MainAxisSize.max,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
+                                      Text("SfM Settings",style: TextStyle(color: HexColor("#ebdbb2"),fontSize: 15,fontWeight: FontWeight.bold),),
+                                      Padding(padding: EdgeInsets.all(2)),
+
                                       settingWidget("Max Cpu Threads (can help with ram usage) -1 == All",global_max_cpu_threads, (value) {
                                         global_max_cpu_threads = value;
-                                      })
+                                      }),
+                                      
+                                      settingWidgetDropdown("Feature Matching Type",feature_matching_type, (value) {
+                                        feature_matching_type = value;
+                                      },[
+                                        DropdownMenuEntry(value: 'exhaustive_matcher', label: 'exhaustive_matcher',style: MenuItemButton.styleFrom(
+                                            foregroundColor: HexColor("#ebdbb2"), // Your text color here
+                                          ),),
+                                        DropdownMenuEntry(value: 'sequential_matcher', label: 'sequential_matcher',style: MenuItemButton.styleFrom(
+                                            foregroundColor: HexColor("#ebdbb2"), // Your text color here
+                                          ),),
+                                      ]),
+                                      
+                                      settingWidget("Sequential Matcher Overlap",sequential_matcher_overlap, (value) {
+                                        sequential_matcher_overlap = value;
+                                      }),
+
+                                      Padding(padding: EdgeInsets.all(2)),
+                                      Text("Gaussian Splat Settings",style: TextStyle(color: HexColor("#ebdbb2"),fontSize: 15,fontWeight: FontWeight.bold),),
+                                      Padding(padding: EdgeInsets.all(2)),
+
+                                      settingWidget("Splat Training Steps",splat_training_steps, (value) {
+                                        splat_training_steps = value;
+                                      }),
+                                      
                                     ],
                                   ),
                                 ),
@@ -124,6 +152,8 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                                     linkWidget("2. OpenMVS", "https://github.com/cdcseacave/openMVS"),
                                     linkWidget("3. mvs-texturing", "https://github.com/nmoehrle/mvs-texturing"),
                                     linkWidget("4. pymeshlab", "https://github.com/cnr-isti-vclab/PyMeshLab"),
+                                    linkWidget("5. brush", "https://github.com/ArthurBrussee/brush"),
+                                    linkWidget("6. PoissonRecon", "https://github.com/mkazhdan/PoissonRecon"),
                                   ],
                                 ),
                               );
@@ -332,11 +362,16 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              running ? Container() : startButtonWidget("Start - High Quality",HexColor("#d79921"),HexColor("#fabd2f"),0),
-                              const Padding(padding: EdgeInsets.all(8)),
-                              running ? Container() : startButtonWidget("Start - Medium Quality",HexColor("#458588"),HexColor("#83a598"),1),
-                              const Padding(padding: EdgeInsets.all(8)),
-                              running ? Container() : startButtonWidget("Start - Low Quality",HexColor("#98971a"),HexColor("#b8bb26"),2),
+                              !photogrammetry_or_splat ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  running ? Container() : startButtonWidget("Start - High Quality",HexColor("#d79921"),HexColor("#fabd2f"),0),
+                                  const Padding(padding: EdgeInsets.all(8)),
+                                  running ? Container() : startButtonWidget("Start - Medium Quality",HexColor("#458588"),HexColor("#83a598"),1),
+                                  const Padding(padding: EdgeInsets.all(8)),
+                                  running ? Container() : startButtonWidget("Start - Low Quality",HexColor("#98971a"),HexColor("#b8bb26"),2),
+                                ]
+                              ) : running ? Container() : startButtonWidget("Start",HexColor("#458588"),HexColor("#83a598"),1),
                               running
                                   ? TextButton(
                                       onPressed: () async {
@@ -430,12 +465,28 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
   settingWidget(String hint, String startingText, Function(String value) onChange) {
     TextEditingController controller = TextEditingController();
     controller.text = startingText;
-    return TextField(decoration: InputDecoration(label: Text(hint,style: TextStyle(color: HexColor("#ebdbb2"),)),),controller: controller,onChanged: (value) {
+    return TextField(decoration: InputDecoration(label: Text(hint,style: TextStyle(color: HexColor("#ebdbb2"),)),
+    // 2. The border when the user clicks/focuses on the dropdown
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.0),
+              borderSide: BorderSide(
+                color: HexColor("#ebdbb2"), // The color when active
+                width: 2.0,
+              ),
+            ),
+
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.0),
+              borderSide: BorderSide(
+                color: HexColor("#ebdbb2"), // The color when active
+                width: 2.0,
+              ),
+            ),),controller: controller,onChanged: (value) {
       if(value == "") {
       }else{
         onChange(value);
       }
-    },style: TextStyle(color: HexColor("#ebdbb2")),);
+    },style: TextStyle(color: HexColor("#ebdbb2")));
     //  GestureDetector(
     //   onTap: () async {
     //     if (!await launchUrl(Uri.parse(url))) {
@@ -447,6 +498,47 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
     //     style: TextStyle(color: HexColor("#ebdbb2"), decoration: TextDecoration.underline),
     //   ),
     // );
+  }
+
+  settingWidgetDropdown(String hint, String startingText, Function(String value) onChange, List<DropdownMenuEntry<String>> items) {
+    
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        DropdownMenu<String>(
+          initialSelection: startingText,
+          label: Text('Feature Matching Type', style: TextStyle(color: HexColor("#ebdbb2")),),
+          onSelected: (String? newValue) {
+            onChange(newValue??"exhaustive_matcher");
+          },
+          dropdownMenuEntries: items,
+          textStyle: TextStyle(color: HexColor("#ebdbb2")),
+          menuStyle: const MenuStyle(backgroundColor: WidgetStatePropertyAll<Color>(Color.fromRGBO(40, 40, 40, 1))),
+          inputDecorationTheme: InputDecorationTheme(
+        
+        
+            // 2. The border when the user clicks/focuses on the dropdown
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.0),
+              borderSide: BorderSide(
+                color: HexColor("#ebdbb2"), // The color when active
+                width: 2.0,
+              ),
+            ),
+
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8.0),
+              borderSide: BorderSide(
+                color: HexColor("#ebdbb2"), // The color when active
+                width: 2.0,
+              ),
+            ),
+          )
+          
+        ),
+      ],
+    );
   }
 
   startButtonWidget(String text, Color buttonColor, Color buttonColorPress, int qualityLevel) {

@@ -4,6 +4,9 @@ import 'package:simple_photogrammetry_gui/scanningScreen/scanningScreenView.dart
 import 'package:window_manager/window_manager.dart';
 
 String global_max_cpu_threads = "-1";
+String splat_training_steps = "30000";
+String feature_matching_type = "exhaustive_matcher";
+String sequential_matcher_overlap = "30";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -213,7 +213,7 @@ class ScanningScreenModel {
             "--output_path", imagesPath
           ]);
 
-          view.status = "4/$totalStepNumber Training Splat (Close Viewer to Finish)";
+          view.status = "4/$totalStepNumber Training Splat";
           view.setState(() {});
 
           await runCommand(brushPath, [
@@ -221,7 +221,9 @@ class ScanningScreenModel {
             //  "--image_path", imagesPath,
 
 
-            "--with-viewer",
+            // "--with-viewer",
+            "--export-path", outputPath,
+            "--total-steps", splat_training_steps
           ],workingFolder: outputPath);
 
           view.status = "Done";
