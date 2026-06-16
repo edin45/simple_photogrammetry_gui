@@ -6,6 +6,7 @@ import 'package:process_run/shell.dart';
 
 import 'package:flutter/material.dart';
 import 'package:isolate_current_directory/isolate_current_directory.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple_photogrammetry_gui/main.dart';
 import 'package:simple_photogrammetry_gui/runCommand.dart';
 import 'package:system_info2/system_info2.dart';
@@ -385,6 +386,8 @@ class ScanningScreenModel {
          "--working-folder", "$outputPath${slash}temp",
          "--output-file", "$outputPath${slash}temp${slash}model_dense.mvs",
          "--max-resolution", maxImgResolution.toString(),
+        //  "--crop-to-roi", "0",
+         "--roi-border", "10"
         ]);
 
         // await runCommand("\"${openMvsPath}DensifyPointCloud\" --input-file \"$outputPath${slash}temp${slash}model_colmap.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --max-resolution $maxImgResolution", []);
@@ -665,6 +668,16 @@ class ScanningScreenModel {
 
                   await downloadDependencies(view, true);
 
+                  is_non_cuda_version = false;
+
+                  if(Platform.isWindows) {
+
+                    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+                    prefs.setBool("is_non_cuda_version", false);
+
+                  }
+
                   view.isDownloadingDependencies = false;
                   view.setState(() {});
                 },
@@ -680,6 +693,16 @@ class ScanningScreenModel {
                   view.setState(() {});
 
                   await downloadDependencies(view, false);
+
+                  is_non_cuda_version = true;
+
+                  if(Platform.isWindows) {
+
+                    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+                    prefs.setBool("is_non_cuda_version", true);
+
+                  }
 
                   view.isDownloadingDependencies = false;
                   view.setState(() {});
