@@ -61,7 +61,7 @@ class ScanningScreenModel {
     if ((await checkDependencies(view))) {
       String appDir = _getAppDir();
       String colmapPath = Platform.isWindows ? '$directory${slash}colmap${slash}COLMAP.bat' : '$appDir/colmap';
-      String brushPath = Platform.isWindows ? '$directory${slash}colmap${slash}COLMAP.bat' : '$appDir/brush/brush_app';
+      String brushPath = Platform.isWindows ? '$directory${slash}brush${slash}brush_app.exe' : '$appDir/brush/brush_app';
       String openMvsPath = Platform.isWindows ? '$directory${slash}openMVS${slash}' : '$appDir/OpenMVS/';
       // String texReconPath = Platform.isWindows ? '$directory${slash}' : './';
       String decimateMeshPath = Platform.isWindows ? '$directory${slash}' : '$appDir/';
@@ -167,7 +167,7 @@ class ScanningScreenModel {
         view.setState(() {});
 
         await runCommand(colmapPath, [
-          "exhaustive_matcher",
+          "$feature_matching_type",
           "--FeatureMatching.use_gpu", "${view.useGpu ? 1 : 0}",
           "--database_path", databasePath,
           "--FeatureMatching.num_threads", global_max_cpu_threads,
