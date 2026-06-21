@@ -632,9 +632,11 @@ class ScanningScreenModel {
       bool hasTextureMesh = await File("$directory${slash}textureMesh.exe").exists();
       bool hasPoissonRecon = await File("$directory${slash}PoissonRecon.exe").exists();
       bool hasSurfaceTrimmer = await File("$directory${slash}SurfaceTrimmer.exe").exists();
+      bool hasBrush = await File('$directory${slash}brush${slash}brush_app.exe').exists();
+      
       // bool hasTexRecon = await File("$directory${slash}SurfaceTrimmer.exe").exists();
 
-      hasAllDependencies = hasColmap && hasOpenMVS && hasTexRecon && hasResizeImages && hasDecimateMesh && hasTextureMesh && hasPoissonRecon && hasSurfaceTrimmer;
+      hasAllDependencies = hasColmap && hasOpenMVS && hasTexRecon && hasResizeImages && hasDecimateMesh && hasTextureMesh && hasPoissonRecon && hasSurfaceTrimmer && hasBrush;
     }
     else if (Platform.isLinux) {
 
@@ -714,11 +716,22 @@ class ScanningScreenModel {
         await runCommand('powershell -c "Invoke-WebRequest -OutFile colmap.zip -Uri https://github.com/colmap/colmap/releases/download/4.0.4/${cuda ? "colmap-x64-windows-cuda.zip" : "colmap-x64-windows-nocuda.zip"}"', []);
       }
 
+      if (!File("./brush.zip").existsSync()) {
+        await runCommand('powershell -c "Invoke-WebRequest -OutFile brush.zip -Uri https://github.com/ArthurBrussee/brush/releases/download/v0.3.0/brush-app-x86_64-pc-windows-msvc.zip"', []);
+      }
+
       // if (!File("./openmvs.zip").existsSync()) {
       //   await runCommand('powershell -c "Invoke-WebRequest -OutFile openmvs.zip -Uri https://github.com/cdcseacave/openMVS/releases/download/v2.1.0/OpenMVS_Windows_x64.7z"', []);
       // }
 
       String err = await runCommand('powershell -c "Expand-Archive -Path ./colmap.zip -DestinationPath \'$directory${slash}colmap\'"', []);
+
+      if (err == "permission_denied") {
+        permissionErrorAlert(view);
+        return;
+      }
+      
+      err = await runCommand('powershell -c "Expand-Archive -Path ./brush.zip -DestinationPath \'$directory${slash}brush\'"', []);
 
       if (err == "permission_denied") {
         permissionErrorAlert(view);
