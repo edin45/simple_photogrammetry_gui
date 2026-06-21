@@ -11,6 +11,8 @@ String splat_training_steps = "30000";
 String feature_matching_type = "exhaustive_matcher";
 String sequential_matcher_overlap = "30";
 bool is_non_cuda_version = false;
+String poissonExtraFlags = "--pointWeight 10 --samplesPerNode 2 --confidence";
+String surfaceTrimmerExtraFlags = "--removeIslands";
 
 void main() async {
 

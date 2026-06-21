@@ -83,14 +83,14 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                                 //   style: TextStyle(color: HexColor("#ebdbb2")),
                                 // ),
                                 content: Container(
-                                  height: 310,
+                                  height: 420,
                                   width: 400,
                                   child: Column(
                                     mainAxisSize: MainAxisSize.max,
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text("SfM Settings",style: TextStyle(color: HexColor("#ebdbb2"),fontSize: 15,fontWeight: FontWeight.bold),),
-                                      Padding(padding: EdgeInsets.all(2)),
+                                      Padding(padding: EdgeInsets.all(1)),
 
                                       settingWidget("Max Cpu Threads (can help with ram usage) -1 == All",global_max_cpu_threads, (value) {
                                         global_max_cpu_threads = value;
@@ -111,9 +111,22 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                                         sequential_matcher_overlap = value;
                                       }),
 
-                                      Padding(padding: EdgeInsets.all(2)),
+                                      Padding(padding: EdgeInsets.all(1)),
+                                      Text("Mesh Recon Settings",style: TextStyle(color: HexColor("#ebdbb2"),fontSize: 15,fontWeight: FontWeight.bold),),
+                                      Padding(padding: EdgeInsets.all(1)),
+
+                                      settingWidget("PoissonRecon Additional Arguments",poissonExtraFlags, (value) {
+                                        poissonExtraFlags = value;
+                                      }),
+
+                                      settingWidget("SurfaceTrimmer Additional Arguments",surfaceTrimmerExtraFlags, (value) {
+                                        surfaceTrimmerExtraFlags = value;
+                                      }),
+
+
+                                      Padding(padding: EdgeInsets.all(1)),
                                       Text("Gaussian Splat Settings",style: TextStyle(color: HexColor("#ebdbb2"),fontSize: 15,fontWeight: FontWeight.bold),),
-                                      Padding(padding: EdgeInsets.all(2)),
+                                      Padding(padding: EdgeInsets.all(1)),
 
                                       settingWidget("Splat Training Steps",splat_training_steps, (value) {
                                         splat_training_steps = value;
