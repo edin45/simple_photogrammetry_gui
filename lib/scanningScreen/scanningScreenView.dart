@@ -30,7 +30,7 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
   late ColorScheme colorScheme;
 
   bool isDownloadingDependencies = false;
-  bool useGpu = true;
+  bool useGpu = is_non_cuda_version ? false : true;
   bool stop = false;
   bool reconstructAndTextureMesh = false;
 
@@ -83,14 +83,14 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                                 //   style: TextStyle(color: HexColor("#ebdbb2")),
                                 // ),
                                 content: Container(
-                                  height: 310,
+                                  height: 420,
                                   width: 400,
                                   child: Column(
                                     mainAxisSize: MainAxisSize.max,
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text("SfM Settings",style: TextStyle(color: HexColor("#ebdbb2"),fontSize: 15,fontWeight: FontWeight.bold),),
-                                      Padding(padding: EdgeInsets.all(2)),
+                                      Padding(padding: EdgeInsets.all(1)),
 
                                       settingWidget("Max Cpu Threads (can help with ram usage) -1 == All",global_max_cpu_threads, (value) {
                                         global_max_cpu_threads = value;
@@ -111,9 +111,22 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                                         sequential_matcher_overlap = value;
                                       }),
 
-                                      Padding(padding: EdgeInsets.all(2)),
+                                      Padding(padding: EdgeInsets.all(1)),
+                                      Text("Mesh Recon Settings",style: TextStyle(color: HexColor("#ebdbb2"),fontSize: 15,fontWeight: FontWeight.bold),),
+                                      Padding(padding: EdgeInsets.all(1)),
+
+                                      settingWidget("PoissonRecon Additional Arguments",poissonExtraFlags, (value) {
+                                        poissonExtraFlags = value;
+                                      }),
+
+                                      settingWidget("SurfaceTrimmer Additional Arguments",surfaceTrimmerExtraFlags, (value) {
+                                        surfaceTrimmerExtraFlags = value;
+                                      }),
+
+
+                                      Padding(padding: EdgeInsets.all(1)),
                                       Text("Gaussian Splat Settings",style: TextStyle(color: HexColor("#ebdbb2"),fontSize: 15,fontWeight: FontWeight.bold),),
-                                      Padding(padding: EdgeInsets.all(2)),
+                                      Padding(padding: EdgeInsets.all(1)),
 
                                       settingWidget("Splat Training Steps",splat_training_steps, (value) {
                                         splat_training_steps = value;
@@ -209,8 +222,30 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                                   child: Text("Gaussian Splatting",style: TextStyle(color: HexColor("#282828")),),
                                 ),decoration: BoxDecoration(color: photogrammetry_or_splat ? HexColor("#458588") : HexColor("#928374"),borderRadius: BorderRadius.only(topRight: Radius.circular(10), bottomRight: Radius.circular(10))),),
                                 onTap: () {
-                                  photogrammetry_or_splat = true;
-                                  setState(() {});
+                                  if(is_non_cuda_version) {
+                                    var alert = AlertDialog(
+                                      backgroundColor: HexColor("#282828"),
+                                      title: Text(
+                                        "Gaussian Splatting is unavailable in the Non-Cuda Version",
+                                        style: TextStyle(color: HexColor("#ebdbb2")),
+                                      ),
+                                      // content: Column(
+                                      //   mainAxisSize: MainAxisSize.min,
+                                      //   children: [
+                                      //     linkWidget("1. Colmap", "https://colmap.github.io/"),
+                                      //     linkWidget("2. OpenMVS", "https://github.com/cdcseacave/openMVS"),
+                                      //     linkWidget("3. mvs-texturing", "https://github.com/nmoehrle/mvs-texturing"),
+                                      //     linkWidget("4. pymeshlab", "https://github.com/cnr-isti-vclab/PyMeshLab"),
+                                      //     linkWidget("5. brush", "https://github.com/ArthurBrussee/brush"),
+                                      //     linkWidget("6. PoissonRecon", "https://github.com/mkazhdan/PoissonRecon"),
+                                      //   ],
+                                      // ),
+                                    );
+                                    showDialog(context: context, builder: (_) => alert);
+                                  }else{
+                                    photogrammetry_or_splat = true;
+                                    setState(() {});
+                                  }
                                 },
                               ),
                             ],
@@ -414,7 +449,7 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                       
                     ],
                   ),
-            Padding(
+            is_non_cuda_version ? Container(height: 70,) : Padding(
               padding: const EdgeInsets.all(20.0),
               child: Row(
                             mainAxisAlignment: MainAxisAlignment.start,

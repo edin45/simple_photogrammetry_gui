@@ -6,6 +6,7 @@ import 'package:process_run/shell.dart';
 
 import 'package:flutter/material.dart';
 import 'package:isolate_current_directory/isolate_current_directory.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple_photogrammetry_gui/main.dart';
 import 'package:simple_photogrammetry_gui/runCommand.dart';
 import 'package:system_info2/system_info2.dart';
@@ -141,9 +142,9 @@ class ScanningScreenModel {
         return;
       }
 
-      final sourceFile = File("$outputPath${slash}temp${slash}model_comap.mvs");
+      final model_colmap_file = File("$outputPath${slash}temp${slash}model_colmap.mvs");
     
-      if (!(await sourceFile.exists())) {
+      if (!(await model_colmap_file.exists())) {
 
         view.status = "1/$totalStepNumber Sift Extraction";
         view.setState(() {});
@@ -202,6 +203,8 @@ class ScanningScreenModel {
           "--database_path", glomapDatabasePath,
         ]);
 
+      }
+
         
 
         if(photogrammetry_or_splat) {
@@ -231,6 +234,8 @@ class ScanningScreenModel {
           return;
 
         }else{
+          
+          if (!(await model_colmap_file.exists())) {
 
         await runCommand(colmapPath, [
           "global_mapper",
@@ -332,6 +337,8 @@ class ScanningScreenModel {
           "--output-file", "$outputPath${slash}temp${slash}model_colmap.mvs"
         ]);
 
+          }
+
       }
 
       // await runCommand("\"${openMvsPath}InterfaceCOLMAP\" --working-folder \"$outputPath${slash}temp${slash}dense\" --input-file \"$outputPath${slash}temp${slash}dense\" --output-file \"$outputPath${slash}temp${slash}model_colmap.mvs\"", []);
@@ -352,11 +359,11 @@ class ScanningScreenModel {
       //   await runCommand('rm $outputPath${slash}temp${slash}model_dense.mvs', []);
       // }
 
-      final file = File("$outputPath${slash}temp${slash}model_dense.mvs");
+      // final file = File("$outputPath${slash}temp${slash}model_dense.mvs");
 
-      if (await file.exists()) {
-        await file.delete();
-      }
+      // if (await file.exists()) {
+      //   await file.delete();
+      // }
 
       while (!File("$outputPath${slash}temp${slash}model_dense.mvs").existsSync()) {
         if (view.stop) {
@@ -385,6 +392,8 @@ class ScanningScreenModel {
          "--working-folder", "$outputPath${slash}temp",
          "--output-file", "$outputPath${slash}temp${slash}model_dense.mvs",
          "--max-resolution", maxImgResolution.toString(),
+        //  "--crop-to-roi", "0",
+         "--roi-border", "10"
         ]);
 
         // await runCommand("\"${openMvsPath}DensifyPointCloud\" --input-file \"$outputPath${slash}temp${slash}model_colmap.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --max-resolution $maxImgResolution", []);
@@ -428,20 +437,27 @@ class ScanningScreenModel {
         // //  "--output-file", "$outputPath${slash}temp${slash}model_surface.mvs",
         //  "-d", (2.5+(double.parse(meshReconRetrys.toString())/2)).toString(),
         // //  "--integrate-only-roi", "1",
-        //  "--smooth", "1",
+        // //  "--smooth", "1",
         //  "--remove-spurious", "0",
+        // //  "--crop-to-roi", "0"
+        // "--roi-border", "10"
         // ]);
 
         // ./PoissonRecon --in /workspace/Documents/out_test_2/2/temp/model_dense.ply --out /workspace/Documents/out_test_2/2/temp/model_surface_test_d12.ply --depth 12 --density
 
         // /workspace/PoissonRecon_1/PoissonRecon/Bin/Linux/SurfaceTrimmer --in /workspace/Documents/out_test_2/2/temp/model_surface_test_d12.ply --out /workspace/Documents/out_test_2/2/temp/model_surface_test_d12_cleaned.ply --trim 6 --ascii
 
-        await runCommand(PoissonRecon, [
+        List<String> poissonReconArguments = [
           "--in", "$outputPath${slash}temp${slash}model_dense.ply",
           "--out", "$outputPath${slash}temp${slash}model_surface.ply",
           "--depth", "${mesh_recon_quality_levels[qualityLevel]}",
+          // "--pointWeight", "16",
           "--density"
-        ]);
+        ]..addAll(poissonExtraFlags.split(" "));
+
+        print("poissonReconArguments: $poissonReconArguments");
+
+        await runCommand(PoissonRecon, poissonReconArguments);
 
         // await runCommand("\"${openMvsPath}ReconstructMesh\" --input-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_surface.mvs\" -d ${(2.5+(double.parse(meshReconRetrys.toString())/2)).toString()}  --integrate-only-roi 1 --smooth 1", []);
         decimationFactorMeshRecon=decimationFactorMeshRecon*0.7;
@@ -461,12 +477,14 @@ class ScanningScreenModel {
           return;
         }
 
-        await runCommand(SurfaceTrimmer, [
+        List<String> surfaceTrimerArguments = [
           "--in", "$outputPath${slash}temp${slash}model_surface.ply",
           "--out", "$outputPath${slash}temp${slash}model_surface_cleaned.ply",
           "--trim", "4",
           "--ascii"
-        ]);
+        ]..addAll(surfaceTrimmerExtraFlags.split(" "));
+
+        await runCommand(SurfaceTrimmer, surfaceTrimerArguments);
       
       if (view.stop) {
         stop(view);
@@ -495,7 +513,7 @@ class ScanningScreenModel {
           return;
         }
 
-      }
+      
 
       // while(!File("$outputPath${slash}textured.obj").existsSync()) {
 
@@ -667,6 +685,16 @@ class ScanningScreenModel {
 
                   await downloadDependencies(view, true);
 
+                  is_non_cuda_version = false;
+
+                  if(Platform.isWindows) {
+
+                    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+                    prefs.setBool("is_non_cuda_version", false);
+
+                  }
+
                   view.isDownloadingDependencies = false;
                   view.setState(() {});
                 },
@@ -682,6 +710,16 @@ class ScanningScreenModel {
                   view.setState(() {});
 
                   await downloadDependencies(view, false);
+
+                  is_non_cuda_version = true;
+
+                  if(Platform.isWindows) {
+
+                    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+                    prefs.setBool("is_non_cuda_version", true);
+
+                  }
 
                   view.isDownloadingDependencies = false;
                   view.setState(() {});
