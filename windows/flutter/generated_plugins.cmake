@@ -3,7 +3,6 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  dynamic_color
   file_selector_windows
   screen_retriever_windows
   system_theme
