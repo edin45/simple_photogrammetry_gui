@@ -412,7 +412,7 @@ class ScanningScreenModel {
       }
 
 
-      List mesh_recon_quality_levels = [13,11,9];
+      List mesh_recon_quality_levels = [12,11,9];
 
       double decimationFactorMeshRecon = 1;
         int meshReconRetrys = 1;
