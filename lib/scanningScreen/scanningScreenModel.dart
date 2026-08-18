@@ -750,8 +750,11 @@ class ScanningScreenModel {
     print("Directory: $directory");
 
     if (Platform.isWindows) {
+      // if (!File("./colmap.zip").existsSync()) {
+      //   await runCommand('powershell -c "Invoke-WebRequest -OutFile colmap.zip -Uri https://github.com/colmap/colmap/releases/download/4.0.4/${cuda ? "colmap-x64-windows-cuda.zip" : "colmap-x64-windows-nocuda.zip"}"', []);
+      // }
       if (!File("./colmap.zip").existsSync()) {
-        await runCommand('powershell -c "Invoke-WebRequest -OutFile colmap.zip -Uri https://github.com/colmap/colmap/releases/download/4.0.4/${cuda ? "colmap-x64-windows-cuda.zip" : "colmap-x64-windows-nocuda.zip"}"', []);
+        await runCommand('curl.exe -L -o colmap.zip "https://github.com/colmap/colmap/releases/download/4.0.4/${cuda ? "colmap-x64-windows-cuda.zip" : "colmap-x64-windows-nocuda.zip"}"', []);
       }
 
       if (!File("./brush.zip").existsSync()) {
