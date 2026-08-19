@@ -10,7 +10,7 @@ String global_max_cpu_threads = "-1";
 String splat_training_steps = "30000";
 String feature_matching_type = "exhaustive_matcher";
 String sequential_matcher_overlap = "30";
-bool is_non_cuda_version = false;
+String gpu_cpu_type = "cuda";
 String poissonExtraFlags = "--pointWeight 10 --samplesPerNode 2 --confidence";
 String surfaceTrimmerExtraFlags = "--removeIslands";
 String decimationArgs = "-t 1";
@@ -39,7 +39,7 @@ void main() async {
 
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    is_non_cuda_version = (prefs.getBool("is_non_cuda_version") ?? false);
+    gpu_cpu_type = (prefs.getString("gpu_cpu_type") ?? "cuda");
 
   }
 

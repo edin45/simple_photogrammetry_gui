@@ -712,13 +712,13 @@ class ScanningScreenModel {
 
                   await downloadDependencies(view, true);
 
-                  is_non_cuda_version = false;
+                  gpu_cpu_type = "cuda";
 
                   if(Platform.isWindows) {
 
                     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-                    prefs.setBool("is_non_cuda_version", false);
+                    prefs.setString("gpu_cpu_type", "cuda");
 
                   }
 
@@ -726,7 +726,7 @@ class ScanningScreenModel {
                   view.setState(() {});
                 },
                 child: Text(
-                  "Yes (CUDA)",
+                  "Yes (CUDA / NVIDIA)",
                   style: TextStyle(color: HexColor("#ebdbb2"), fontSize: 18),
                 )),
             TextButton(
@@ -738,13 +738,13 @@ class ScanningScreenModel {
 
                   await downloadDependencies(view, false);
 
-                  is_non_cuda_version = true;
+                  gpu_cpu_type = "cpu";
 
                   if(Platform.isWindows) {
 
                     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-                    prefs.setBool("is_non_cuda_version", true);
+                    prefs.setString("gpu_cpu_type", "cpu");
 
                   }
 
@@ -752,17 +752,62 @@ class ScanningScreenModel {
                   view.setState(() {});
                 },
                 child: Text(
-                  "Yes${Platform.isLinux ? "" : " (No CUDA)"}",
+                  "Yes${Platform.isLinux ? "" : " (CPU Only)"}",
                   style: TextStyle(color: HexColor("#ebdbb2"), fontSize: 18),
                 )),
-            TextButton(
-                onPressed: () {
-                  Navigator.pop(view.context);
+                TextButton(
+                onPressed: () async {
+
+                  showAlert(
+                    view.colorScheme,
+                    view.context,
+                    "AMD Gpus are still largely unsupported - so most steps will still use the CPU\n - however Gaussian Splatting will work on AMD",
+                    [
+                      TextButton(
+                    onPressed: () async {
+
+                      Navigator.pop(view.context);
+                      Navigator.pop(view.context);
+
+                      view.isDownloadingDependencies = true;
+                      view.setState(() {});
+
+                      await downloadDependencies(view, false);
+
+                      gpu_cpu_type = "amd";
+
+                      if(Platform.isWindows) {
+
+                        final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+                        prefs.setString("gpu_cpu_type", "amd");
+
+                      }
+
+                      view.isDownloadingDependencies = false;
+                      view.setState(() {});
+                    },
+                    child: Text(
+                      "Understood",
+                      style: TextStyle(color: HexColor("#ebdbb2"), fontSize: 18),
+                    ))
+                    ]);
+
+                  
                 },
                 child: Text(
-                  "No",
+                  "Yes${Platform.isLinux ? "" : " (AMD Gpu)"}",
                   style: TextStyle(color: HexColor("#ebdbb2"), fontSize: 18),
-                ))
+                )),
+            // TextButton(
+            //     onPressed: () {
+
+            //       Navigator.pop(view.context);
+            //     },
+            //     child: Text(
+            //       "No",
+            //       style: TextStyle(color: HexColor("#ebdbb2"), fontSize: 18),
+            //     ))
           ],
           
           /*desc: Platform.isLinux ? "This requires the application to be run with sudo" : "This requires the application to be run as adminstrator"*/);

@@ -31,7 +31,7 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
   late ColorScheme colorScheme;
 
   bool isDownloadingDependencies = false;
-  bool useGpu = is_non_cuda_version ? false : true;
+  bool useGpu = gpu_cpu_type != "cuda" ? false : true;
   bool stop = false;
   bool reconstructAndTextureMesh = false;
 
@@ -172,11 +172,11 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                                   child: Text("Gaussian Splatting",style: TextStyle(color: HexColor("#282828")),),
                                 ),decoration: BoxDecoration(color: photogrammetry_or_splat ? HexColor("#458588") : HexColor("#928374"),borderRadius: BorderRadius.only(topRight: Radius.circular(10), bottomRight: Radius.circular(10))),),
                                 onTap: () {
-                                  if(is_non_cuda_version) {
+                                  if(gpu_cpu_type == "cpu") {
                                     var alert = AlertDialog(
                                       backgroundColor: HexColor("#282828"),
                                       title: Text(
-                                        "Gaussian Splatting is unavailable in the Non-Cuda Version",
+                                        "Gaussian Splatting is unavailable in the CPU-Only Version",
                                         style: TextStyle(color: HexColor("#ebdbb2")),
                                       ),
                                       // content: Column(
@@ -350,11 +350,11 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                               !photogrammetry_or_splat ? Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  running ? Container() : startButtonWidget("Start - High Quality",HexColor("#d79921"),HexColor("#fabd2f"),0),
+                                  running ? Container() : startButtonWidget("Start - Low Quality",HexColor("#98971a"),HexColor("#b8bb26"),2),
                                   const Padding(padding: EdgeInsets.all(8)),
                                   running ? Container() : startButtonWidget("Start - Medium Quality",HexColor("#458588"),HexColor("#83a598"),1),
                                   const Padding(padding: EdgeInsets.all(8)),
-                                  running ? Container() : startButtonWidget("Start - Low Quality",HexColor("#98971a"),HexColor("#b8bb26"),2),
+                                  running ? Container() : startButtonWidget("Start - High Quality",HexColor("#d79921"),HexColor("#fabd2f"),0),
                                 ]
                               ) : running ? Container() : startButtonWidget("Start",HexColor("#458588"),HexColor("#83a598"),1),
                               running
@@ -399,7 +399,7 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                       
                     ],
                   ),
-            is_non_cuda_version ? Container(height: 70,) : Padding(
+            gpu_cpu_type != "cuda" ? Container(height: 70,) : Padding(
               padding: const EdgeInsets.all(20.0),
               child: Row(
                             mainAxisAlignment: MainAxisAlignment.start,
