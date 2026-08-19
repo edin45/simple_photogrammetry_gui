@@ -12,7 +12,7 @@ Then click "Select Image Folder" to select the folder containing the images.
 
 Aftewards click **Select Output Folder** to select the folder where the result should be stored (There should be plenty of disk space in the location of the output folder).
 
-![alt text](https://raw.githubusercontent.com/edin45/simple_photogrammetry_gui/master/readme_imgs/scanning_screen.jpg)
+![alt text](https://raw.githubusercontent.com/edin45/simple_photogrammetry_gui/master/readme_imgs/scanning_screen_v1.1.2.png)
 
 Lastly, click start. The finished result will be in the output folder with the name: **textured.obj**
 
@@ -62,3 +62,5 @@ but if it works it should compile all dependencies, collect them and set them up
  mvs-texturing: https://github.com/nmoehrle/mvs-texturing
 
  PoissonRecon: https://github.com/mkazhdan/PoissonRecon
+ 
+ Brush: https://github.com/ArthurBrussee/brush
