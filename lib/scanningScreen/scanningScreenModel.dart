@@ -65,7 +65,7 @@ class ScanningScreenModel {
       String brushPath = Platform.isWindows ? '$directory${slash}brush${slash}brush_app.exe' : '$appDir/brush/brush_app';
       String openMvsPath = Platform.isWindows ? '$directory${slash}openMVS${slash}' : '$appDir/OpenMVS/';
       // String texReconPath = Platform.isWindows ? '$directory${slash}' : './';
-      String decimateMeshPath = Platform.isWindows ? '$directory${slash}' : '$appDir/';
+      String decimateMeshPath = Platform.isWindows ? '$directory${slash}decimateMesh.exe' : '$appDir/decimateMesh';
       String textureMeshPath = Platform.isWindows ? '$directory${slash}' : '$appDir/';
       String PoissonRecon = Platform.isWindows ? '$directory${slash}PoissonRecon.exe' : '$appDir/PoissonRecon';
       String SurfaceTrimmer = Platform.isWindows ? '$directory${slash}SurfaceTrimmer.exe' : '$appDir/SurfaceTrimmer';
@@ -261,6 +261,8 @@ class ScanningScreenModel {
         view.status = "4/$totalStepNumber Undistorting Images";
         view.setState(() {});
 
+        List maximagesizes = [-1, 3000, 2000];
+
         await runCommand(colmapPath, [
           "image_undistorter",
           "--image_path", imagesPath,
@@ -271,6 +273,9 @@ class ScanningScreenModel {
           "--output_path", "$outputPath${slash}temp${slash}dense",
 
           "--output_type", "COLMAP",
+          
+          "--max_image_size", maximagesizes[qualityLevel].toString()
+          
         ]);
 
         // await runCommand("& \"$colmapPath\" image_undistorter --image_path \"$imagesPath\" --input_path \"$outputPath${slash}temp${slash}sparse${slash}0\" --output_path \"$outputPath${slash}temp${slash}dense\" --output_type COLMAP", []);
@@ -348,7 +353,7 @@ class ScanningScreenModel {
         return;
       }
 
-      List dense_quality_levels = [2560, 1920, 512];
+      List dense_quality_levels = [2560, 1920, 1024];
 
       int maxImgResolution = dense_quality_levels[qualityLevel];
       int denseRetrys = 1;
@@ -412,7 +417,7 @@ class ScanningScreenModel {
       }
 
 
-      List mesh_recon_quality_levels = [12,11,9];
+      List mesh_recon_quality_levels = [12,11,10];
 
       double decimationFactorMeshRecon = 1;
         int meshReconRetrys = 1;
@@ -429,25 +434,9 @@ class ScanningScreenModel {
           view.setState(() {});
         }
 
-        // await runCommand("${openMvsPath}ReconstructMesh", [
-        //  "--input-file", "$outputPath${slash}temp${slash}model_dense.mvs",
-        //  "--working-folder", "$outputPath${slash}temp",
-        //  "--output-file", "model_surface.mvs",
-         
-        // //  "--output-file", "$outputPath${slash}temp${slash}model_surface.mvs",
-        //  "-d", (2.5+(double.parse(meshReconRetrys.toString())/2)).toString(),
-        // //  "--integrate-only-roi", "1",
-        // //  "--smooth", "1",
-        //  "--remove-spurious", "0",
-        // //  "--crop-to-roi", "0"
-        // "--roi-border", "10"
-        // ]);
+        if(meshing_type == "poissonrecon") {
 
-        // ./PoissonRecon --in /workspace/Documents/out_test_2/2/temp/model_dense.ply --out /workspace/Documents/out_test_2/2/temp/model_surface_test_d12.ply --depth 12 --density
-
-        // /workspace/PoissonRecon_1/PoissonRecon/Bin/Linux/SurfaceTrimmer --in /workspace/Documents/out_test_2/2/temp/model_surface_test_d12.ply --out /workspace/Documents/out_test_2/2/temp/model_surface_test_d12_cleaned.ply --trim 6 --ascii
-
-        List<String> poissonReconArguments = [
+          List<String> poissonReconArguments = [
           "--in", "$outputPath${slash}temp${slash}model_dense.ply",
           "--out", "$outputPath${slash}temp${slash}model_surface.ply",
           "--depth", "${mesh_recon_quality_levels[qualityLevel]}",
@@ -455,13 +444,34 @@ class ScanningScreenModel {
           "--density"
         ]..addAll(poissonExtraFlags.split(" "));
 
-        print("poissonReconArguments: $poissonReconArguments");
+        // print("poissonReconArguments: $poissonReconArguments");
 
         await runCommand(PoissonRecon, poissonReconArguments);
 
+        }else{
+
+          await runCommand("${openMvsPath}ReconstructMesh", [
+          "--input-file", "$outputPath${slash}temp${slash}model_dense.mvs",
+          "--working-folder", "$outputPath${slash}temp",
+          "--output-file", "model_surface.mvs",
+          
+    
+          "-d", (2.0+(double.parse(meshReconRetrys.toString())/2)).toString()
+          
+          
+          ]..addAll(meshingExtraFlags.split(" ")));
+
+        }
+
+        // ./PoissonRecon --in /workspace/Documents/out_test_2/2/temp/model_dense.ply --out /workspace/Documents/out_test_2/2/temp/model_surface_test_d12.ply --depth 12 --density
+
+        // /workspace/PoissonRecon_1/PoissonRecon/Bin/Linux/SurfaceTrimmer --in /workspace/Documents/out_test_2/2/temp/model_surface_test_d12.ply --out /workspace/Documents/out_test_2/2/temp/model_surface_test_d12_cleaned.ply --trim 6 --ascii
+
+        
+
         // await runCommand("\"${openMvsPath}ReconstructMesh\" --input-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_surface.mvs\" -d ${(2.5+(double.parse(meshReconRetrys.toString())/2)).toString()}  --integrate-only-roi 1 --smooth 1", []);
-        decimationFactorMeshRecon=decimationFactorMeshRecon*0.7;
-        mesh_recon_quality_levels[qualityLevel] = mesh_recon_quality_levels[qualityLevel] > 1 ? mesh_recon_quality_levels[qualityLevel]-1 : 1;
+        // decimationFactorMeshRecon=decimationFactorMeshRecon*0.7;
+        // mesh_recon_quality_levels[qualityLevel] = mesh_recon_quality_levels[qualityLevel] > 1 ? mesh_recon_quality_levels[qualityLevel]-1 : 1;
         
         if(meshReconRetrys == 10) {
           view.status = "Failed, went wrong at Mesh Reconstruction";
@@ -477,14 +487,31 @@ class ScanningScreenModel {
           return;
         }
 
-        List<String> surfaceTrimerArguments = [
-          "--in", "$outputPath${slash}temp${slash}model_surface.ply",
-          "--out", "$outputPath${slash}temp${slash}model_surface_cleaned.ply",
-          "--trim", "4",
-          "--ascii"
-        ]..addAll(surfaceTrimmerExtraFlags.split(" "));
+        view.status = "9/$totalStepNumber Reconstructing Mesh";
+        view.setState(() {});
 
-        await runCommand(SurfaceTrimmer, surfaceTrimerArguments);
+        if(meshing_type == "poissonrecon") {
+
+          List<String> surfaceTrimerArguments = [
+            "--in", "$outputPath${slash}temp${slash}model_surface.ply",
+            "--out", "$outputPath${slash}temp${slash}model_surface_cleaned.ply",
+            "--trim", "4",
+            "--ascii"
+          ]..addAll(surfaceTrimmerExtraFlags.split(" "));
+
+          await runCommand(SurfaceTrimmer, surfaceTrimerArguments);
+
+          List decimationLevels = [0.01,0.03,0.1];
+
+          List<String> decimateMeshArgs = [
+            "-m", "$outputPath${slash}temp${slash}model_surface_cleaned.ply",
+            "-o", "$outputPath${slash}temp${slash}",
+            "-t", decimationLevels[qualityLevel].toString()
+          ];
+
+          await runCommand(decimateMeshPath, decimateMeshArgs);
+
+        }
       
       if (view.stop) {
         stop(view);
@@ -502,10 +529,10 @@ class ScanningScreenModel {
       await runCommand(mvs_texturing, [
           "--keep_unseen_faces",
           "$imagesPath${slash}project.nvm",
-          "$outputPath${slash}temp${slash}model_surface_cleaned.ply",
+          "$outputPath${slash}temp${slash}${meshing_type == "poissonrecon" ? "model_surface_decimated" : "model_surface"}.ply",
           "$outputPath${slash}textured"
           
-        ],workingFolder: imagesPath);
+        ],workingFolder: "$outputPath${slash}temp${slash}dense${slash}images");
 
         if(!File("$outputPath${slash}textured.obj").existsSync()) {
           view.status = "Failed, went wrong at texturing mesh";
@@ -758,7 +785,8 @@ class ScanningScreenModel {
       }
 
       if (!File("./brush.zip").existsSync()) {
-        await runCommand('powershell -c "Invoke-WebRequest -OutFile brush.zip -Uri https://github.com/ArthurBrussee/brush/releases/download/v0.3.0/brush-app-x86_64-pc-windows-msvc.zip"', []);
+        await runCommand('curl.exe -L -o brush.zip "https://github.com/ArthurBrussee/brush/releases/download/v0.3.0/brush-app-x86_64-pc-windows-msvc.zip"', []);
+        // await runCommand('powershell -c "Invoke-WebRequest -OutFile brush.zip -Uri https://github.com/ArthurBrussee/brush/releases/download/v0.3.0/brush-app-x86_64-pc-windows-msvc.zip"', []);
       }
 
       // if (!File("./openmvs.zip").existsSync()) {

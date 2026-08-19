@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
@@ -76,65 +77,14 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                     alignment: Alignment.topLeft,
                     child: GestureDetector(
                             onTap: () {
-                              var alert = AlertDialog(
+                              var alert;
+                              alert = AlertDialog(
                                 backgroundColor: HexColor("#282828"),
                                 // title: Text(
                                 //   "Scan Settings:",
                                 //   style: TextStyle(color: HexColor("#ebdbb2")),
                                 // ),
-                                content: Container(
-                                  height: 420,
-                                  width: 400,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.max,
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text("SfM Settings",style: TextStyle(color: HexColor("#ebdbb2"),fontSize: 15,fontWeight: FontWeight.bold),),
-                                      Padding(padding: EdgeInsets.all(1)),
-
-                                      settingWidget("Max Cpu Threads (can help with ram usage) -1 == All",global_max_cpu_threads, (value) {
-                                        global_max_cpu_threads = value;
-                                      }),
-                                      
-                                      settingWidgetDropdown("Feature Matching Type",feature_matching_type, (value) {
-                                        feature_matching_type = value;
-                                      },[
-                                        DropdownMenuEntry(value: 'exhaustive_matcher', label: 'exhaustive_matcher',style: MenuItemButton.styleFrom(
-                                            foregroundColor: HexColor("#ebdbb2"), // Your text color here
-                                          ),),
-                                        DropdownMenuEntry(value: 'sequential_matcher', label: 'sequential_matcher',style: MenuItemButton.styleFrom(
-                                            foregroundColor: HexColor("#ebdbb2"), // Your text color here
-                                          ),),
-                                      ]),
-                                      
-                                      settingWidget("Sequential Matcher Overlap",sequential_matcher_overlap, (value) {
-                                        sequential_matcher_overlap = value;
-                                      }),
-
-                                      Padding(padding: EdgeInsets.all(1)),
-                                      Text("Mesh Recon Settings",style: TextStyle(color: HexColor("#ebdbb2"),fontSize: 15,fontWeight: FontWeight.bold),),
-                                      Padding(padding: EdgeInsets.all(1)),
-
-                                      settingWidget("PoissonRecon Additional Arguments",poissonExtraFlags, (value) {
-                                        poissonExtraFlags = value;
-                                      }),
-
-                                      settingWidget("SurfaceTrimmer Additional Arguments",surfaceTrimmerExtraFlags, (value) {
-                                        surfaceTrimmerExtraFlags = value;
-                                      }),
-
-
-                                      Padding(padding: EdgeInsets.all(1)),
-                                      Text("Gaussian Splat Settings",style: TextStyle(color: HexColor("#ebdbb2"),fontSize: 15,fontWeight: FontWeight.bold),),
-                                      Padding(padding: EdgeInsets.all(1)),
-
-                                      settingWidget("Splat Training Steps",splat_training_steps, (value) {
-                                        splat_training_steps = value;
-                                      }),
-                                      
-                                    ],
-                                  ),
-                                ),
+                                content: SettingsAlert(),
                                 
                               );
                               showDialog(context: context, builder: (_) => alert);
@@ -497,6 +447,80 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
     );
   }
 
+  
+  startButtonWidget(String text, Color buttonColor, Color buttonColorPress, int qualityLevel) {
+    return TextButton(
+                              onPressed: () async {
+                                if (imageFolder == "") {
+                                  widget.model.showAlert(colorScheme, context, "You have to select an image folder", [
+                                    TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          "Ok",
+                                          style: TextStyle(color: HexColor("#ebdbb2")),
+                                        ))
+                                  ]);
+                                } else if (outputFolder == "") {
+                                  widget.model.showAlert(colorScheme, context, "You have to select an output folder", [
+                                    TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          "Ok",
+                                          style: TextStyle(color: HexColor("#ebdbb2")),
+                                        ))
+                                  ]);
+                                } else {
+                                  stop = false;
+                                  widget.model.startScanningProcess(this, imageFolder, outputFolder,qualityLevel, photogrammetry_or_splat);
+                                }
+                              },
+                              //  : () {
+                              //   widget.model.startScanningProcess(this, imageFolder, outputFolder);
+                              // },
+                              style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
+                                if (states.contains(MaterialState.pressed)) {
+                                  return buttonColorPress;
+                                }
+                                return buttonColor;
+                              })),
+                              child: Text(
+                                // hasAllDependencies ? 
+                                text,
+                                //  : "Install Dependencies (Needs Adminstrator rights)",
+                                style: TextStyle(color: HexColor("#282828")),
+                              ),
+                            );
+  }
+
+  checkZenity() async {
+    bool hasZenity = true;
+
+    try{
+      hasZenity = (await runCommand("zenity", ["--help"],checkOnlyError: true)) == "";
+    }catch(e) {
+      hasZenity = false;
+    }
+
+    return hasZenity;
+  }
+}
+
+
+
+
+class SettingsAlert extends StatefulWidget {
+  const SettingsAlert({super.key});
+
+  @override
+  State<SettingsAlert> createState() => _SettingsAlertState();
+}
+
+class _SettingsAlertState extends State<SettingsAlert> {
+
   settingWidget(String hint, String startingText, Function(String value) onChange) {
     TextEditingController controller = TextEditingController();
     controller.text = startingText;
@@ -576,63 +600,84 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
     );
   }
 
-  startButtonWidget(String text, Color buttonColor, Color buttonColorPress, int qualityLevel) {
-    return TextButton(
-                              onPressed: () async {
-                                if (imageFolder == "") {
-                                  widget.model.showAlert(colorScheme, context, "You have to select an image folder", [
-                                    TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                          "Ok",
-                                          style: TextStyle(color: HexColor("#ebdbb2")),
-                                        ))
-                                  ]);
-                                } else if (outputFolder == "") {
-                                  widget.model.showAlert(colorScheme, context, "You have to select an output folder", [
-                                    TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                          "Ok",
-                                          style: TextStyle(color: HexColor("#ebdbb2")),
-                                        ))
-                                  ]);
-                                } else {
-                                  stop = false;
-                                  widget.model.startScanningProcess(this, imageFolder, outputFolder,qualityLevel, photogrammetry_or_splat);
-                                }
-                              },
-                              //  : () {
-                              //   widget.model.startScanningProcess(this, imageFolder, outputFolder);
-                              // },
-                              style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {
-                                if (states.contains(MaterialState.pressed)) {
-                                  return buttonColorPress;
-                                }
-                                return buttonColor;
-                              })),
-                              child: Text(
-                                // hasAllDependencies ? 
-                                text,
-                                //  : "Install Dependencies (Needs Adminstrator rights)",
-                                style: TextStyle(color: HexColor("#282828")),
-                              ),
-                            );
-  }
 
-  checkZenity() async {
-    bool hasZenity = true;
 
-    try{
-      hasZenity = (await runCommand("zenity", ["--help"],checkOnlyError: true)) == "";
-    }catch(e) {
-      hasZenity = false;
-    }
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+                                  height: meshing_type == "openmvs" ? 460 : 560,
+                                  width: 400,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.max,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text("SfM Settings",style: TextStyle(color: HexColor("#ebdbb2"),fontSize: 15,fontWeight: FontWeight.bold),),
+                                      Padding(padding: EdgeInsets.all(1)),
 
-    return hasZenity;
+                                      settingWidget("Max Cpu Threads (can help with ram usage) -1 == All",global_max_cpu_threads, (value) {
+                                        global_max_cpu_threads = value;
+                                      }),
+                                      
+                                      settingWidgetDropdown("Feature Matching Type",feature_matching_type, (value) {
+                                        feature_matching_type = value;
+                                      },[
+                                        DropdownMenuEntry(value: 'exhaustive_matcher', label: 'exhaustive_matcher',style: MenuItemButton.styleFrom(
+                                            foregroundColor: HexColor("#ebdbb2"), // Your text color here
+                                          ),),
+                                        DropdownMenuEntry(value: 'sequential_matcher', label: 'sequential_matcher',style: MenuItemButton.styleFrom(
+                                            foregroundColor: HexColor("#ebdbb2"), // Your text color here
+                                          ),),
+                                      ]),
+                                      
+                                      settingWidget("Sequential Matcher Overlap",sequential_matcher_overlap, (value) {
+                                        sequential_matcher_overlap = value;
+                                      }),
+
+                                      Padding(padding: EdgeInsets.all(1)),
+                                      Text("Mesh Recon Settings",style: TextStyle(color: HexColor("#ebdbb2"),fontSize: 15,fontWeight: FontWeight.bold),),
+                                      Padding(padding: EdgeInsets.all(1)),
+
+                                      settingWidgetDropdown("Meshing Type",meshing_type, (value) {
+                                        meshing_type = value;
+                                        setState(() {
+                                          
+                                        });
+                                      },[
+                                        DropdownMenuEntry(value: 'openmvs', label: 'OpenMVS',style: MenuItemButton.styleFrom(
+                                            foregroundColor: HexColor("#ebdbb2"), // Your text color here
+                                          ),),
+                                        DropdownMenuEntry(value: 'poissonrecon', label: 'PoissonRecon',style: MenuItemButton.styleFrom(
+                                            foregroundColor: HexColor("#ebdbb2"), // Your text color here
+                                          ),),
+                                      ]),
+
+                                      meshing_type == "openmvs" ? settingWidget("Meshing Additional Arguments",meshingExtraFlags, (value) {
+                                        meshingExtraFlags = value;
+                                      }) : Container(),
+
+                                      meshing_type == "poissonrecon" ? settingWidget("PoissonRecon Additional Arguments",poissonExtraFlags, (value) {
+                                        poissonExtraFlags = value;
+                                      }) : Container(),
+
+                                      meshing_type == "poissonrecon" ? settingWidget("SurfaceTrimmer Additional Arguments",surfaceTrimmerExtraFlags, (value) {
+                                        surfaceTrimmerExtraFlags = value;
+                                      }) : Container(),
+
+                                      // meshing_type == "poissonrecon" ? settingWidget("Decimation Additional Arguments",decimationArgs, (value) {
+                                      //   decimationArgs = value;
+                                      // }) : Container(),
+
+
+                                      Padding(padding: EdgeInsets.all(1)),
+                                      Text("Gaussian Splat Settings",style: TextStyle(color: HexColor("#ebdbb2"),fontSize: 15,fontWeight: FontWeight.bold),),
+                                      Padding(padding: EdgeInsets.all(1)),
+
+                                      settingWidget("Splat Training Steps",splat_training_steps, (value) {
+                                        splat_training_steps = value;
+                                      }),
+                                      
+                                    ],
+                                  ),
+                                );
   }
 }

@@ -13,6 +13,9 @@ String sequential_matcher_overlap = "30";
 bool is_non_cuda_version = false;
 String poissonExtraFlags = "--pointWeight 10 --samplesPerNode 2 --confidence";
 String surfaceTrimmerExtraFlags = "--removeIslands";
+String decimationArgs = "-t 1";
+String meshingExtraFlags = "--target-face-num 0 --crop-to-roi 1 --roi-border 10";
+String meshing_type = "poissonrecon";
 
 void main() async {
 
