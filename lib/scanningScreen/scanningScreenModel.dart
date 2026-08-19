@@ -9,6 +9,7 @@ import 'package:isolate_current_directory/isolate_current_directory.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple_photogrammetry_gui/main.dart';
 import 'package:simple_photogrammetry_gui/runCommand.dart';
+import 'package:simple_photogrammetry_gui/utils/getMemoryUsage.dart';
 import 'package:system_info2/system_info2.dart';
 import 'package:path/path.dart' as p;
 
@@ -629,29 +630,54 @@ class ScanningScreenModel {
 
   int megaByte = 1024 * 1024;
 
-  ramUsageWatcher(int val) {
-    // Stop-Process -Name mspaint.exe -Force
-    Timer.periodic(const Duration(milliseconds: 100), (timer) async {
-      // print('free memory: ${(SysInfo.getFreePhysicalMemory() / megaByte)}');
-      if ((SysInfo.getFreePhysicalMemory() / megaByte) < 400) {
-        print("To much memory usage, Killing processes");
-        if(Platform.isWindows) {
-          runCommand('taskkill /IM "RefineMesh.exe" /F', []);
-          runCommand('taskkill /IM "TextureMesh.exe" /F', []);
-          runCommand('taskkill /IM "ReconstructMesh.exe" /F', []);
-          runCommand('taskkill /IM "DensifyPointCloud.exe" /F', []);
-          runCommand('taskkill /IM "COLMAP.bat" /F', []);
-          runCommand('taskkill /IM "reconstructMesh.exe" /F', []);
-          runCommand('taskkill /IM "texrecon.exe" /F', []);
-        }else{
-          runCommand('killall RefineMesh', []);
-          runCommand('killall TextureMesh', []);
-          runCommand('killall ReconstructMesh', []);
-          runCommand('killall DensifyPointCloud', []);
-          runCommand('killall colmap', []);
+  int lastRamTriggerTimeStamp = 0;
+
+  ramUsageWatcher(int val) async {
+
+    int freeMemory = (await getFreeMemory()) ?? 0;
+    
+    
+    // print(freeMemory);
+
+
+    if(freeMemory > 0) {
+
+
+      Timer.periodic(const Duration(milliseconds: 100), (timer) async {
+
+        freeMemory = (await getFreeMemory()) ?? 0;
+
+        int durationSinceLastRamTrigger = DateTime.now().millisecondsSinceEpoch - lastRamTriggerTimeStamp;
+
+        // print(freeMemory);
+
+        // print("durationSinceLastRamTrigger: $durationSinceLastRamTrigger");
+        
+        if (freeMemory < 400 && durationSinceLastRamTrigger > 10000) {
+
+          // print("TRIGGER");
+          
+          print("To much memory usage, Killing processes");
+          if(Platform.isWindows) {
+            runCommand('taskkill /IM "RefineMesh.exe" /F', []);
+            runCommand('taskkill /IM "TextureMesh.exe" /F', []);
+            runCommand('taskkill /IM "ReconstructMesh.exe" /F', []);
+            runCommand('taskkill /IM "DensifyPointCloud.exe" /F', []);
+            runCommand('taskkill /IM "COLMAP.bat" /F', []);
+            runCommand('taskkill /IM "reconstructMesh.exe" /F', []);
+            runCommand('taskkill /IM "texrecon.exe" /F', []);
+          }else{
+            runCommand('killall RefineMesh', []);
+            runCommand('killall TextureMesh', []);
+            runCommand('killall ReconstructMesh', []);
+            runCommand('killall DensifyPointCloud', []);
+            runCommand('killall colmap', []);
+          }
+
+          lastRamTriggerTimeStamp = DateTime.now().millisecondsSinceEpoch;
         }
-      }
-    });
+      });
+    }
   }
 
   stop(var view) {

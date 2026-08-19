@@ -13,6 +13,7 @@ import 'package:roundcheckbox/roundcheckbox.dart';
 import 'package:simple_photogrammetry_gui/TitleBar/TitleBar.dart';
 import 'package:simple_photogrammetry_gui/main.dart';
 import 'package:simple_photogrammetry_gui/runCommand.dart';
+import 'package:simple_photogrammetry_gui/utils/getMemoryUsage.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:hexcolor/hexcolor.dart';
 
@@ -41,12 +42,21 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
 
   bool photogrammetry_or_splat = false;
 
+  // String freeMem = "Waiting";
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
 
     Isolate.spawn(widget.model.ramUsageWatcher, 0);
+
+    // Timer.periodic(Duration(milliseconds: 500),(_) async {
+    //   freeMem = (await getFreeMemory()).toString();
+    //   setState(() {
+        
+    //   });
+    // });
 
     asyncTasks() async {
       hasAllDependencies = await widget.model.checkDependencies(this);
@@ -133,6 +143,8 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                 ],)
               ],
             ),
+
+            // Text("$freeMem", style: TextStyle(color: Colors.white,fontSize: 20),),
             isDownloadingDependencies
                 ? Center(
                     child: Column(
