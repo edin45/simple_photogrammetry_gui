@@ -9,7 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple_photogrammetry_gui/main.dart';
 import 'package:simple_photogrammetry_gui/runCommand.dart';
 import 'package:simple_photogrammetry_gui/utils/getMemoryUsage.dart';
-import 'package:system_info2/system_info2.dart';
+// import 'package:system_info2/system_info2.dart';
 import 'package:path/path.dart' as p;
 
 class ScanningScreenModel {
@@ -69,7 +69,7 @@ class ScanningScreenModel {
 
     if ((await checkDependencies(view))) {
       String appDir = _getAppDir();
-      String colmapPath = Platform.isWindows ? '$directory${slash}colmap${slash}COLMAP.bat' : '$appDir/colmap';
+      String colmapPath = Platform.isWindows ? '$directory${slash}colmap${slash}bin${slash}colmap.exe' : '$appDir/colmap';
       String brushPath = Platform.isWindows ? '$directory${slash}brush${slash}brush_app.exe' : '$appDir/brush/brush_app';
       String openMvsPath = Platform.isWindows ? '$directory${slash}openMVS${slash}' : '$appDir/OpenMVS/';
       // String texReconPath = Platform.isWindows ? '$directory${slash}' : './';

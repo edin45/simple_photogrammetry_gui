@@ -216,14 +216,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  globbing:
-    dependency: transitive
-    description:
-      name: globbing
-      sha256: "4f89cfaf6fa74c9c1740a96259da06bd45411ede56744e28017cc534a12b6e2d"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.0"
   hexcolor:
     dependency: "direct main"
     description:
@@ -613,14 +605,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.1"
-  system_info2:
-    dependency: "direct main"
-    description:
-      name: system_info2
-      sha256: b937736ecfa63c45b10dde1ceb6bb30e5c0c340e14c441df024150679d65ac43
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.1.0"
   system_theme:
     dependency: "direct main"
     description:
