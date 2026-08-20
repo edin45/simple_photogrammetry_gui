@@ -41,6 +41,18 @@ nix develop
 flutter run -d linux
 ```
 
+To load the development shell automatically, install
+[direnv](https://direnv.net/docs/installation.html), add its hook to your shell,
+review `.envrc`, and approve it once:
+
+```sh
+direnv allow
+```
+
+`.envrc` contains only `use flake`, so it loads the same pinned tools as
+`nix develop`. Direnv requires approval because `.envrc` is shell code from the
+checkout.
+
 ### Windows:
     ```
     git clone https://github.com/edin45/simple_photogrammetry_gui.git

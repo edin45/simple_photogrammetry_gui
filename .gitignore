@@ -32,6 +32,7 @@ migrate_working_dir/
 .pub/
 /build/
 /result
+/.direnv/
 
 # Symbolication related
 app.*.symbols
