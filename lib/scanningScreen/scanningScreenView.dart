@@ -49,7 +49,7 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
     // TODO: implement initState
     super.initState();
 
-    Isolate.spawn(widget.model.ramUsageWatcher, 0);
+    // Isolate.spawn(widget.model.ramUsageWatcher, 0);
 
     // Timer.periodic(Duration(milliseconds: 500),(_) async {
     //   freeMem = (await getFreeMemory()).toString();
