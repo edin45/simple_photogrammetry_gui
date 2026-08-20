@@ -18,27 +18,37 @@ Lastly, click start. The finished result will be in the output folder with the n
 
 ### Nix
 
-The Nix build supports x86-64 Linux with an NVIDIA GPU. It includes CUDA builds
-of COLMAP and OpenMVS, matching the existing Linux build, together with the
-other command-line programs used by the reconstruction pipeline. Install a
-current version of [Nix](https://nixos.org/download/) and an NVIDIA driver that
-supports CUDA 12.9 before using these commands. Nix supplies the CUDA runtime,
-but the operating system must supply the graphics driver.
+The Nix build supports x86-64 Linux and provides two variants. Both include the
+command-line programs used by the reconstruction pipeline.
 
-Build and run the application with:
+| Variant | Run in one command | Native dependencies | Host requirement |
+| --- | --- | --- | --- |
+| CUDA | `nix run .#cuda` | CUDA-enabled COLMAP and OpenMVS | An NVIDIA driver compatible with CUDA 12.9 |
+| CPU | `nix run .#cpu` | CPU-only COLMAP and OpenMVS | No NVIDIA driver |
+
+Install a current version of [Nix](https://nixos.org/download/), then run the
+variant that matches the computer. The CPU choice concerns the photogrammetry
+pipeline. Gaussian splatting uses Brush and has its own graphics hardware
+requirements.
+
+To keep a `result` link instead of launching immediately, build a variant and
+run its launcher:
 
 ```sh
-nix build
+nix build .#cuda
 ./result/bin/simple_photogrammetry_gui
 ```
 
-`nix build` creates the `result` link and packages the command-line programs in
-the locations the application expects. To work on the Flutter source, enter a
-temporary shell containing Flutter and the build libraries:
+Replace `cuda` with `cpu` for the CPU package. The unqualified `nix run` and
+`nix build` commands currently select CUDA by default.
+
+To work on the Flutter source, enter a temporary shell containing Flutter and
+the CUDA build libraries. Set the same application mode used by the CUDA
+package when launching the unwrapped application:
 
 ```sh
 nix develop
-flutter run -d linux
+SIMPLE_PHOTOGRAMMETRY_GPU_TYPE=cuda flutter run -d linux
 ```
 
 To load the development shell automatically, install

@@ -13,46 +13,71 @@ installed on the developer's computer.
 
 This project needs more than Flutter. The application starts COLMAP, OpenMVS,
 Brush, mvs-texturing, PoissonRecon, and a Python mesh-decimation script while it
-runs. The Nix package builds or downloads those programs and places them where
+runs. The Nix packages build or download those programs and place them where
 the application expects to find them. A developer and GitHub Actions can then
-check the same package with the same command.
+check the same outputs with the same command.
 
 The term *flake* refers to the Nix entry point, `flake.nix`, together with its
-dependency lock file, `flake.lock`. The lock file records the exact revision of
-nixpkgs, Nix's main package collection. The recipes for mvs-texturing and
-PoissonRecon also record exact source revisions and hashes because those two
-programs are not supplied by nixpkgs. An unchanged checkout therefore keeps
-using the same dependency versions.
+dependency lock file, `flake.lock`. The flake declares nixpkgs and every direct
+source that is not supplied by nixpkgs. Its input URLs name exact source
+revisions, and the lock file records their resolved revisions and content
+hashes. An unchanged checkout therefore keeps using the same dependency
+versions.
 
 ## Files and responsibilities
 
 - [`flake.nix`](../flake.nix) defines the public commands for building,
   developing, formatting, and checking. Keeping these entry points together
   gives local and CI builds the same recipe.
-- [`flake.lock`](../flake.lock) records the exact nixpkgs revision. Update it
-  only when dependency updates are intended, then run the checks below.
+- [`flake.lock`](../flake.lock) records the resolved revision and content hash
+  of nixpkgs and each direct source input. Update it only when dependency
+  updates are intended, then run the checks below.
 - [`nix/package.nix`](../nix/package.nix) builds the Flutter application and
-  assembles its helper programs. The extra directory layout exists because the
-  application was written to find those programs inside an AppImage-style
+  assembles either the CPU or CUDA helper programs. Its launcher sets the GPU
+  mode that corresponds to those programs. The extra directory layout exists
+  because the application was written to find them inside an AppImage-style
   directory.
 - [`nix/openmvs-cuda.nix`](../nix/openmvs-cuda.nix) adds CUDA to nixpkgs'
   OpenMVS package. Nixpkgs already supplies a CUDA variant of COLMAP, but its
   OpenMVS package has no equivalent switch.
 - [`nix/mvs-texturing.nix`](../nix/mvs-texturing.nix) and
   [`nix/poisson-recon.nix`](../nix/poisson-recon.nix) build the two programs
-  missing from nixpkgs. Their sources must be fetched and verified before Nix
-  enters the network-isolated compilation step.
+  missing from nixpkgs. `flake.nix` passes their locked source inputs into these
+  recipes before Nix enters the network-isolated compilation step.
 - [`.github/workflows/nix.yml`](../.github/workflows/nix.yml) runs the package
   check on GitHub.
 - [`.envrc`](../.envrc) optionally asks direnv to enter the same development
   shell as `nix develop`. The generated `.direnv` directory is ignored because
   it contains machine-local cache files and Nix store links.
 
-## CUDA support
+## CPU and CUDA packages
 
-The existing Linux build compiles both COLMAP and OpenMVS with NVIDIA CUDA.
-The Nix build does the same. CUDA lets those programs move suitable numerical
-work from the CPU to an NVIDIA GPU.
+The flake exposes two complete packages:
+
+- `.#cuda` uses CUDA-enabled builds of COLMAP and OpenMVS. Its launcher sets
+  `SIMPLE_PHOTOGRAMMETRY_GPU_TYPE=cuda`, so the application initially enables
+  COLMAP's GPU options.
+- `.#cpu` uses CPU-only builds of COLMAP and OpenMVS. Its launcher sets
+  `SIMPLE_PHOTOGRAMMETRY_GPU_TYPE=cpu`, so the application keeps those options
+  disabled and warns before starting Gaussian splatting.
+
+The default package is `.#cuda`. Named outputs are preferable in instructions
+because they make the hardware choice visible.
+
+The CPU package does not link COLMAP or OpenMVS against the NVIDIA driver and
+can start on a computer without an NVIDIA GPU. A CUDA-built COLMAP can perform
+feature extraction on the CPU, but CUDA-built OpenMVS has a runtime dependency
+on `libcuda.so.1`. It cannot even start when the NVIDIA driver library is
+absent. Changing only the application's GPU setting is therefore not enough to
+make the CUDA package a CPU distribution.
+
+The CPU and CUDA labels describe the photogrammetry dependencies and their GUI
+defaults. Both packages include Brush for Gaussian splatting. Brush uses the
+graphics adapter separately, so a working CPU photogrammetry pipeline does not
+promise CPU-only Gaussian splatting.
+
+CUDA lets COLMAP and OpenMVS move suitable numerical work from the CPU to an
+NVIDIA GPU.
 
 NVIDIA assigns each GPU generation a *compute capability*. The list in
 `flake.nix` tells the CUDA compiler which generations to include in the
@@ -67,11 +92,10 @@ settings. The package contains the CUDA runtime but not the NVIDIA driver. The
 driver belongs to the host operating system and must support the packaged CUDA
 12.9 runtime.
 
-GitHub's runners do not have NVIDIA GPUs. CI can compile the CUDA sources, link
-the CUDA libraries, and run tests that do not need a GPU. The OpenMVS pipeline
-test is excluded inside the Nix sandbox because it starts CUDA code without a
-GPU device. Before merging a CUDA packaging change, run the CUDA check and a
-reconstruction on an NVIDIA machine as described below.
+GitHub's runners do not have NVIDIA GPUs. `nix flake check` builds both package
+variants, but CI cannot prove that the CUDA package completes a reconstruction.
+Before merging a CUDA packaging change, run the CUDA check and a reconstruction
+on an NVIDIA machine as described below.
 
 ## How the build can fail
 
@@ -122,7 +146,7 @@ separate email or chat service.
 
 ## Local checks
 
-Run the package check from the repository root:
+Run the package checks from the repository root. This builds both variants:
 
 ```sh
 nix flake check --print-build-logs
@@ -138,9 +162,11 @@ nvidia-smi
 This is only a first check. `nvidia-smi` can still work when the part of the
 driver used by CUDA programs needs recovery.
 
-After `nix build`, check that both programs were compiled with CUDA support:
+Build the CUDA variant, then check that both programs were compiled with CUDA
+support:
 
 ```sh
+nix build .#cuda
 ./result/usr/bin/colmap -h
 ./result/usr/bin/OpenMVS/DensifyPointCloud --help
 ```
@@ -174,6 +200,18 @@ needs reconstruction input. Run a small reconstruction through the application
 and confirm that it completes the **Densifying Point Cloud** step. This also
 tests the hand-off between COLMAP, OpenMVS, and the application, which isolated
 command checks cannot cover.
+
+Build the CPU variant on a machine without the NVIDIA driver, then start it and
+run a small reconstruction:
+
+```sh
+nix build .#cpu
+./result/bin/simple_photogrammetry_gui
+```
+
+This exercises the CPU dependency closure as well as the application's CPU
+default. Hiding a GPU from the CUDA package is not an equivalent test because
+the NVIDIA driver library is still present on that machine.
 
 To exercise the GitHub Actions workflow itself, start Docker and run `act` from
 the Nix development shell. `act` creates a local container that imitates

@@ -1,26 +1,19 @@
 {
   lib,
   stdenv,
-  fetchFromGitHub,
   libjpeg,
   libpng,
   zlib,
+  poissonReconSource,
 }:
 
 # PoissonRecon is not available in nixpkgs, so this builds the two executables
-# used by the application directly from the pinned upstream source. `rev`
-# selects an exact source revision and `hash` lets Nix verify that its contents
-# have not changed.
+# used by the application directly from the source input pinned by the flake.
 stdenv.mkDerivation {
   pname = "poisson-recon";
   version = "18.76-unstable-2026-04-29";
 
-  src = fetchFromGitHub {
-    owner = "mkazhdan";
-    repo = "PoissonRecon";
-    rev = "262b0f539d404057d1f36e1adc07fc9388678899";
-    hash = "sha256-hHEUMI3puhriVc3/5g9wq/CWQEJ7xtzvskov+oiuZcg=";
-  };
+  src = poissonReconSource;
 
   buildInputs = [
     libjpeg

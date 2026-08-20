@@ -5,20 +5,33 @@
   lib,
   flutter344,
   makeWrapper,
-  colmapWithCuda,
   brush-splat,
   procps,
   python3,
   callPackage,
-  cudaCapabilities,
+  gpuType,
+  packageVariant,
+  colmapPackage,
+  openmvsPackage,
+  mvsTexturingSource,
+  mapmapSource,
+  rayintSource,
+  mveSource,
+  poissonReconSource,
 }:
 
 let
-  # nixpkgs supplies the other programs used below. These two are not packaged
-  # there, so their small build definitions live next to this file.
-  mvs-texturing = callPackage ./mvs-texturing.nix { };
-  openmvs-cuda = callPackage ./openmvs-cuda.nix { inherit cudaCapabilities; };
-  poisson-recon = callPackage ./poisson-recon.nix { };
+  # nixpkgs supplies the other programs used below. These two use local build
+  # definitions and source inputs declared by the flake.
+  mvs-texturing = callPackage ./mvs-texturing.nix {
+    inherit
+      mvsTexturingSource
+      mapmapSource
+      rayintSource
+      mveSource
+      ;
+  };
+  poisson-recon = callPackage ./poisson-recon.nix { inherit poissonReconSource; };
 
   # decimateMesh.py imports PyMeshLab. Wrapping Python with this environment
   # makes that import available without changing the script.
@@ -28,7 +41,7 @@ in
 # Flutter Linux application, and installs a launcher. Using it avoids keeping a
 # separate hand-written Flutter build script in the Nix setup.
 flutter344.buildFlutterApplication (finalAttrs: {
-  pname = "simple-photogrammetry-gui";
+  pname = "simple-photogrammetry-gui-${packageVariant}";
   # Keep this value in sync with pubspec.yaml. Nix uses it in the package name.
   version = "1.1.0+1";
 
@@ -42,11 +55,12 @@ flutter344.buildFlutterApplication (finalAttrs: {
   # entries below. It also creates the decimateMesh Python launcher.
   nativeBuildInputs = [ makeWrapper ];
 
-  # COLMAP and OpenMVS below are both built with CUDA, matching the existing
-  # Linux build. APPDIR tells the application where the helper programs live.
-  # procps supplies `killall`, which the Cancel button uses to stop them.
+  # APPDIR tells the application where the helper programs live. The GPU type
+  # matches the selected COLMAP and OpenMVS packages. procps supplies `killall`,
+  # which the Cancel button uses to stop helper processes.
   extraWrapProgramArgs = ''
     --set APPDIR "$out" \
+    --set SIMPLE_PHOTOGRAMMETRY_GPU_TYPE "${gpuType}" \
     --prefix PATH : ${lib.makeBinPath [ procps ]}
   '';
 
@@ -60,14 +74,14 @@ flutter344.buildFlutterApplication (finalAttrs: {
     # programs below APPDIR/usr/bin. Recreate that layout with links to the Nix
     # packages instead of changing the existing Windows and AppImage paths.
     mkdir -p "$out/usr/bin/OpenMVS" "$out/usr/bin/brush"
-    ln -s ${lib.getExe colmapWithCuda} "$out/usr/bin/colmap"
+    ln -s ${lib.getExe colmapPackage} "$out/usr/bin/colmap"
     ln -s ${lib.getExe brush-splat} "$out/usr/bin/brush/brush_app"
     ln -s ${lib.getExe mvs-texturing} "$out/usr/bin/texrecon"
     ln -s ${poisson-recon}/bin/PoissonRecon "$out/usr/bin/PoissonRecon"
     ln -s ${poisson-recon}/bin/SurfaceTrimmer "$out/usr/bin/SurfaceTrimmer"
 
     for program in InterfaceCOLMAP DensifyPointCloud ReconstructMesh; do
-      ln -s "${openmvs-cuda}/bin/$program" "$out/usr/bin/OpenMVS/$program"
+      ln -s "${openmvsPackage}/bin/$program" "$out/usr/bin/OpenMVS/$program"
     done
 
     install -Dm644 python/decimateMesh.py \
@@ -77,7 +91,7 @@ flutter344.buildFlutterApplication (finalAttrs: {
   '';
 
   meta = {
-    description = "GUI for photogrammetry and Gaussian splatting";
+    description = "${packageVariant} build of the GUI for photogrammetry and Gaussian splatting";
     homepage = "https://github.com/edin45/simple_photogrammetry_gui";
     license = lib.licenses.gpl3Only;
     mainProgram = "simple_photogrammetry_gui";

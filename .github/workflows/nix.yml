@@ -32,7 +32,7 @@ permissions:
 
 jobs:
   package:
-    name: Build package
+    name: Build CPU and CUDA packages
     runs-on: ubuntu-latest
     steps:
       # A job starts in a temporary, empty virtual machine. This copies the
@@ -46,7 +46,7 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31
 
-      # flake.nix maps this check to the application package, so this evaluates
-      # the flake and builds the same result a Nix user gets from `nix build`.
-      - name: Check and build the Nix package
+      # flake.nix maps this check to both application variants, so this
+      # evaluates the flake and builds the CPU and CUDA dependency closures.
+      - name: Check and build the Nix packages
         run: nix flake check --print-build-logs

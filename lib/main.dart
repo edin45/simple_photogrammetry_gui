@@ -4,13 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple_photogrammetry_gui/scanningScreen/scanningScreenModel.dart';
 import 'package:simple_photogrammetry_gui/scanningScreen/scanningScreenView.dart';
+import 'package:simple_photogrammetry_gui/utils/gpu_type.dart';
 import 'package:window_manager/window_manager.dart';
 
 String global_max_cpu_threads = "-1";
 String splat_training_steps = "30000";
 String feature_matching_type = "exhaustive_matcher";
 String sequential_matcher_overlap = "30";
-String gpu_cpu_type = "cuda";
+String gpu_cpu_type = resolveGpuType(Platform.environment);
 String poissonExtraFlags = "--pointWeight 10 --samplesPerNode 2 --confidence";
 String surfaceTrimmerExtraFlags = "--removeIslands";
 String decimationArgs = "-t 1";
@@ -38,7 +39,10 @@ void main() async {
   if (Platform.isWindows) {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    gpu_cpu_type = (prefs.getString("gpu_cpu_type") ?? "cuda");
+    gpu_cpu_type = normalizeGpuType(
+      prefs.getString("gpu_cpu_type"),
+      fallback: "cuda",
+    );
   }
 
   runApp(MaterialApp(home: ScanningScreenView(ScanningScreenModel())));

@@ -1,5 +1,56 @@
 {
   "nodes": {
+    "mapmapSource": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1688456645,
+        "narHash": "sha256-CFMLjs7yorJ2a9/LNCzq9M98zna4KPX7EoP4sTZQ+Vo=",
+        "owner": "dthuerck",
+        "repo": "mapmap_cpu",
+        "rev": "fa526e0963ca3e431a02aa7b9e87b85ba8a8e304",
+        "type": "github"
+      },
+      "original": {
+        "owner": "dthuerck",
+        "repo": "mapmap_cpu",
+        "rev": "fa526e0963ca3e431a02aa7b9e87b85ba8a8e304",
+        "type": "github"
+      }
+    },
+    "mveSource": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1511555642,
+        "narHash": "sha256-9JuMuoXQwuot5VO0j2TA76r7viwWFGiD/MaZaoycYf0=",
+        "owner": "nmoehrle",
+        "repo": "mve",
+        "rev": "91c0f3fde0781399b2fe872d8e52e4899274a84a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nmoehrle",
+        "repo": "mve",
+        "rev": "91c0f3fde0781399b2fe872d8e52e4899274a84a",
+        "type": "github"
+      }
+    },
+    "mvsTexturingSource": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1773255216,
+        "narHash": "sha256-qo9rcMC0oym6kDjY7ceLrWQDha5759k3TyaREVEO2gg=",
+        "owner": "nmoehrle",
+        "repo": "mvs-texturing",
+        "rev": "f3374298ac959cb5afe47a14e4d35d2ac7fbdbb1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nmoehrle",
+        "repo": "mvs-texturing",
+        "rev": "f3374298ac959cb5afe47a14e4d35d2ac7fbdbb1",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1787070829,
@@ -16,9 +67,48 @@
         "type": "github"
       }
     },
+    "poissonReconSource": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1777477075,
+        "narHash": "sha256-hHEUMI3puhriVc3/5g9wq/CWQEJ7xtzvskov+oiuZcg=",
+        "owner": "mkazhdan",
+        "repo": "PoissonRecon",
+        "rev": "262b0f539d404057d1f36e1adc07fc9388678899",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mkazhdan",
+        "repo": "PoissonRecon",
+        "rev": "262b0f539d404057d1f36e1adc07fc9388678899",
+        "type": "github"
+      }
+    },
+    "rayintSource": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1755715012,
+        "narHash": "sha256-rXzvXdBGwq/411uqXBoVrImTmdIgWlmGYlRn+/iXg2c=",
+        "owner": "nmoehrle",
+        "repo": "rayint",
+        "rev": "b62c8905f6dd11a179128517e814e0e00f9bb809",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nmoehrle",
+        "repo": "rayint",
+        "rev": "b62c8905f6dd11a179128517e814e0e00f9bb809",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs"
+        "mapmapSource": "mapmapSource",
+        "mveSource": "mveSource",
+        "mvsTexturingSource": "mvsTexturingSource",
+        "nixpkgs": "nixpkgs",
+        "poissonReconSource": "poissonReconSource",
+        "rayintSource": "rayintSource"
       }
     }
   },
