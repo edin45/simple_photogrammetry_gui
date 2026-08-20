@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:process_run/shell.dart';
 
 import 'package:flutter/material.dart';
 import 'package:isolate_current_directory/isolate_current_directory.dart';
@@ -15,9 +14,17 @@ import 'package:path/path.dart' as p;
 
 class ScanningScreenModel {
 
+  ScanningScreenModel({this.executableDirectory});
+
+  final String? executableDirectory;
+
   String slash = Platform.isWindows ? "\\" : "/";
 
   String _getAppDir() {
+    final configuredExecutableDirectory = executableDirectory;
+    if (configuredExecutableDirectory != null) {
+      return configuredExecutableDirectory;
+    }
     final appDir = Platform.environment['APPDIR'];
     if (appDir != null) {
       return "$appDir/usr/bin";
@@ -82,61 +89,15 @@ class ScanningScreenModel {
         totalStepNumber = 4;
       }
 
-      var shell = Shell();
-
-      if(Platform.isWindows) {
-
-        await runCommand('powershell -c "New-Item -Path \'$outputPath${slash}temp\' -ItemType Directory"', []);
-        await runCommand('powershell -c "New-Item -Path \'$outputPath${slash}temp${slash}sparse\' -ItemType Directory"', []);
-        await runCommand('powershell -c "New-Item -Path \'$outputPath${slash}temp${slash}dense\' -ItemType Directory"', []);
-        await runCommand('powershell -c "New-Item -Path \'$outputPath${slash}temp${slash}dense${slash}sparse\' -ItemType Directory"', []);
-        await runCommand('powershell -c "New-Item -Path \'$outputPath${slash}temp${slash}database.db\' -ItemType File"', []);
-      
-      }else{
-
-        
-
-        try{
-
-        await shell.run('''
-        mkdir $outputPath/temp
-        ''');
-
-        }catch(e) {}
-
-        try{
-
-        await shell.run('''
-        mkdir $outputPath/temp/sparse
-        ''');
-
-        }catch(e) {}
-
-        try{
-
-        await shell.run('''
-        mkdir $outputPath/temp/dense
-        ''');
-
-        }catch(e) {}
-
-        try{
-
-        await shell.run('''
-        mkdir $outputPath/temp/dense/sparse
-        ''');
-
-        }catch(e) {}
-
-        try{
-
-          await shell.run('''
-          touch $outputPath/temp/database.db
-          ''');
-
-        }catch(e) {}
-
-      }
+      await Directory(
+        p.join(outputPath, "temp", "sparse"),
+      ).create(recursive: true);
+      await Directory(
+        p.join(outputPath, "temp", "dense", "sparse"),
+      ).create(recursive: true);
+      await File(
+        p.join(outputPath, "temp", "database.db"),
+      ).create(recursive: true);
 
       if (view.stop) {
         stop(view);
@@ -388,9 +349,13 @@ class ScanningScreenModel {
         view.setState(() {});
 
         if(Platform.isWindows) {
+          final tempDirectory = Directory(p.join(outputPath, "temp"));
+          await for (final entry in tempDirectory.list()) {
+            if (entry is File && p.extension(entry.path) == ".dmap") {
+              await entry.delete();
+            }
+          }
 
-          await runCommand('powershell -c "del \'$outputPath${slash}temp${slash}*.dmap\'"', []);
-        
         }
 
         await runCommand("${openMvsPath}DensifyPointCloud", [
