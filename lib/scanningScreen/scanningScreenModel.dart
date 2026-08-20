@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:process_run/shell.dart';
 
 import 'package:flutter/material.dart';
 import 'package:isolate_current_directory/isolate_current_directory.dart';
@@ -10,14 +9,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple_photogrammetry_gui/main.dart';
 import 'package:simple_photogrammetry_gui/runCommand.dart';
 import 'package:simple_photogrammetry_gui/utils/getMemoryUsage.dart';
-import 'package:system_info2/system_info2.dart';
+// import 'package:system_info2/system_info2.dart';
 import 'package:path/path.dart' as p;
 
 class ScanningScreenModel {
 
+  ScanningScreenModel({this.executableDirectory});
+
+  final String? executableDirectory;
+
   String slash = Platform.isWindows ? "\\" : "/";
 
   String _getAppDir() {
+    final configuredExecutableDirectory = executableDirectory;
+    if (configuredExecutableDirectory != null) {
+      return configuredExecutableDirectory;
+    }
     final appDir = Platform.environment['APPDIR'];
     if (appDir != null) {
       return "$appDir/usr/bin";
@@ -62,7 +69,7 @@ class ScanningScreenModel {
 
     if ((await checkDependencies(view))) {
       String appDir = _getAppDir();
-      String colmapPath = Platform.isWindows ? '$directory${slash}colmap${slash}COLMAP.bat' : '$appDir/colmap';
+      String colmapPath = Platform.isWindows ? '$directory${slash}colmap${slash}bin${slash}colmap.exe' : '$appDir/colmap';
       String brushPath = Platform.isWindows ? '$directory${slash}brush${slash}brush_app.exe' : '$appDir/brush/brush_app';
       String openMvsPath = Platform.isWindows ? '$directory${slash}openMVS${slash}' : '$appDir/OpenMVS/';
       // String texReconPath = Platform.isWindows ? '$directory${slash}' : './';
@@ -82,61 +89,15 @@ class ScanningScreenModel {
         totalStepNumber = 4;
       }
 
-      var shell = Shell();
-
-      if(Platform.isWindows) {
-
-        await runCommand('powershell -c "New-Item -Path \'$outputPath${slash}temp\' -ItemType Directory"', []);
-        await runCommand('powershell -c "New-Item -Path \'$outputPath${slash}temp${slash}sparse\' -ItemType Directory"', []);
-        await runCommand('powershell -c "New-Item -Path \'$outputPath${slash}temp${slash}dense\' -ItemType Directory"', []);
-        await runCommand('powershell -c "New-Item -Path \'$outputPath${slash}temp${slash}dense${slash}sparse\' -ItemType Directory"', []);
-        await runCommand('powershell -c "New-Item -Path \'$outputPath${slash}temp${slash}database.db\' -ItemType File"', []);
-      
-      }else{
-
-        
-
-        try{
-
-        await shell.run('''
-        mkdir $outputPath/temp
-        ''');
-
-        }catch(e) {}
-
-        try{
-
-        await shell.run('''
-        mkdir $outputPath/temp/sparse
-        ''');
-
-        }catch(e) {}
-
-        try{
-
-        await shell.run('''
-        mkdir $outputPath/temp/dense
-        ''');
-
-        }catch(e) {}
-
-        try{
-
-        await shell.run('''
-        mkdir $outputPath/temp/dense/sparse
-        ''');
-
-        }catch(e) {}
-
-        try{
-
-          await shell.run('''
-          touch $outputPath/temp/database.db
-          ''');
-
-        }catch(e) {}
-
-      }
+      await Directory(
+        p.join(outputPath, "temp", "sparse"),
+      ).create(recursive: true);
+      await Directory(
+        p.join(outputPath, "temp", "dense", "sparse"),
+      ).create(recursive: true);
+      await File(
+        p.join(outputPath, "temp", "database.db"),
+      ).create(recursive: true);
 
       if (view.stop) {
         stop(view);
@@ -388,9 +349,13 @@ class ScanningScreenModel {
         view.setState(() {});
 
         if(Platform.isWindows) {
+          final tempDirectory = Directory(p.join(outputPath, "temp"));
+          await for (final entry in tempDirectory.list()) {
+            if (entry is File && p.extension(entry.path) == ".dmap") {
+              await entry.delete();
+            }
+          }
 
-          await runCommand('powershell -c "del \'$outputPath${slash}temp${slash}*.dmap\'"', []);
-        
         }
 
         await runCommand("${openMvsPath}DensifyPointCloud", [
@@ -628,57 +593,57 @@ class ScanningScreenModel {
     }
   }
 
-  int megaByte = 1024 * 1024;
+  // int megaByte = 1024 * 1024;
 
-  int lastRamTriggerTimeStamp = 0;
+  // int lastRamTriggerTimeStamp = 0;
 
-  ramUsageWatcher(int val) async {
+  // ramUsageWatcher(int val) async {
 
-    int freeMemory = (await getFreeMemory()) ?? 0;
+  //   int freeMemory = (await getFreeMemory()) ?? 0;
     
     
-    // print(freeMemory);
+  //   // print(freeMemory);
 
 
-    if(freeMemory > 0) {
+  //   if(freeMemory > 0) {
 
 
-      Timer.periodic(const Duration(milliseconds: 100), (timer) async {
+  //     Timer.periodic(const Duration(milliseconds: 100), (timer) async {
 
-        freeMemory = (await getFreeMemory()) ?? 0;
+  //       freeMemory = (await getFreeMemory()) ?? 0;
 
-        int durationSinceLastRamTrigger = DateTime.now().millisecondsSinceEpoch - lastRamTriggerTimeStamp;
+  //       int durationSinceLastRamTrigger = DateTime.now().millisecondsSinceEpoch - lastRamTriggerTimeStamp;
 
-        // print(freeMemory);
+  //       // print(freeMemory);
 
-        // print("durationSinceLastRamTrigger: $durationSinceLastRamTrigger");
+  //       // print("durationSinceLastRamTrigger: $durationSinceLastRamTrigger");
         
-        if (freeMemory < 400 && durationSinceLastRamTrigger > 10000) {
+  //       if (freeMemory < 400 && durationSinceLastRamTrigger > 10000) {
 
-          // print("TRIGGER");
+  //         // print("TRIGGER");
           
-          print("To much memory usage, Killing processes");
-          if(Platform.isWindows) {
-            runCommand('taskkill /IM "RefineMesh.exe" /F', []);
-            runCommand('taskkill /IM "TextureMesh.exe" /F', []);
-            runCommand('taskkill /IM "ReconstructMesh.exe" /F', []);
-            runCommand('taskkill /IM "DensifyPointCloud.exe" /F', []);
-            runCommand('taskkill /IM "COLMAP.bat" /F', []);
-            runCommand('taskkill /IM "reconstructMesh.exe" /F', []);
-            runCommand('taskkill /IM "texrecon.exe" /F', []);
-          }else{
-            runCommand('killall RefineMesh', []);
-            runCommand('killall TextureMesh', []);
-            runCommand('killall ReconstructMesh', []);
-            runCommand('killall DensifyPointCloud', []);
-            runCommand('killall colmap', []);
-          }
+  //         print("To much memory usage, Killing processes");
+  //         if(Platform.isWindows) {
+  //           runCommand('taskkill /IM "RefineMesh.exe" /F', []);
+  //           runCommand('taskkill /IM "TextureMesh.exe" /F', []);
+  //           runCommand('taskkill /IM "ReconstructMesh.exe" /F', []);
+  //           runCommand('taskkill /IM "DensifyPointCloud.exe" /F', []);
+  //           runCommand('taskkill /IM "COLMAP.bat" /F', []);
+  //           runCommand('taskkill /IM "reconstructMesh.exe" /F', []);
+  //           runCommand('taskkill /IM "texrecon.exe" /F', []);
+  //         }else{
+  //           runCommand('killall RefineMesh', []);
+  //           runCommand('killall TextureMesh', []);
+  //           runCommand('killall ReconstructMesh', []);
+  //           runCommand('killall DensifyPointCloud', []);
+  //           runCommand('killall colmap', []);
+  //         }
 
-          lastRamTriggerTimeStamp = DateTime.now().millisecondsSinceEpoch;
-        }
-      });
-    }
-  }
+  //         lastRamTriggerTimeStamp = DateTime.now().millisecondsSinceEpoch;
+  //       }
+  //     });
+  //   }
+  // }
 
   stop(var view) {
     view.status = "";

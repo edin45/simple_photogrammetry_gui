@@ -2,8 +2,6 @@
 
 ## Usage:
 
-### **IMPORTANT: Neither the Image or Output Path can contain any spaces**
-
 Windows Users: You will be prompted to download missing dependencies, click **Install (Cuda)** if you have an Nvidia GPU, and if not, click **Install (No Cuda)**.
 
 Linux Users: All dependencies are packaged in the .AppImage - so this step does not apply
