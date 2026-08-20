@@ -188,20 +188,30 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                                     var alert = AlertDialog(
                                       backgroundColor: HexColor("#282828"),
                                       title: Text(
-                                        "Gaussian Splatting is unavailable in the CPU-Only Version",
+                                        "Gaussian Splatting is unavailable in the CPU-Only Version - however it may work on AMD Gpus",
                                         style: TextStyle(color: HexColor("#ebdbb2")),
                                       ),
-                                      // content: Column(
-                                      //   mainAxisSize: MainAxisSize.min,
-                                      //   children: [
-                                      //     linkWidget("1. Colmap", "https://colmap.github.io/"),
-                                      //     linkWidget("2. OpenMVS", "https://github.com/cdcseacave/openMVS"),
-                                      //     linkWidget("3. mvs-texturing", "https://github.com/nmoehrle/mvs-texturing"),
-                                      //     linkWidget("4. pymeshlab", "https://github.com/cnr-isti-vclab/PyMeshLab"),
-                                      //     linkWidget("5. brush", "https://github.com/ArthurBrussee/brush"),
-                                      //     linkWidget("6. PoissonRecon", "https://github.com/mkazhdan/PoissonRecon"),
-                                      //   ],
-                                      // ),
+                                      
+                                      
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          TextButton(
+                                            onPressed: () async {
+
+                                              Navigator.pop(context);
+
+                                              photogrammetry_or_splat = true;
+                                              
+                                              setState(() {});
+
+                                            },
+                                            child: Text(
+                                              "Continue",
+                                              style: TextStyle(color: HexColor("#ebdbb2"), fontSize: 18),
+                                            ))
+                                        ],
+                                      ),
                                     );
                                     showDialog(context: context, builder: (_) => alert);
                                   }else{
