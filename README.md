@@ -16,6 +16,31 @@ Lastly, click start. The finished result will be in the output folder with the n
 
 ## Building:
 
+### Nix
+
+The Nix build supports x86-64 Linux with an NVIDIA GPU. It includes CUDA builds
+of COLMAP and OpenMVS, matching the existing Linux build, together with the
+other command-line programs used by the reconstruction pipeline. Install a
+current version of [Nix](https://nixos.org/download/) and an NVIDIA driver that
+supports CUDA 12.9 before using these commands. Nix supplies the CUDA runtime,
+but the operating system must supply the graphics driver.
+
+Build and run the application with:
+
+```sh
+nix build
+./result/bin/simple_photogrammetry_gui
+```
+
+`nix build` creates the `result` link and packages the command-line programs in
+the locations the application expects. To work on the Flutter source, enter a
+temporary shell containing Flutter and the build libraries:
+
+```sh
+nix develop
+flutter run -d linux
+```
+
 ### Windows:
     ```
     git clone https://github.com/edin45/simple_photogrammetry_gui.git
