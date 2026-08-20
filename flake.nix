@@ -51,9 +51,11 @@
       checks.${system}.default = simple-photogrammetry-gui;
 
       # Copy the package's Flutter tools and Linux libraries into the development
-      # shell instead of maintaining a second dependency list.
+      # shell instead of maintaining a second dependency list. act is added only
+      # for running the GitHub Actions workflow in a local Docker container.
       devShells.${system}.default = pkgs.mkShell {
         inputsFrom = [ simple-photogrammetry-gui ];
+        packages = [ pkgs.act ];
       };
 
       # `nix fmt` uses nixpkgs' Nix formatter. Pinning it through flake.lock

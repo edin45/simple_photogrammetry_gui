@@ -53,6 +53,9 @@ direnv allow
 `nix develop`. Direnv requires approval because `.envrc` is shell code from the
 checkout.
 
+For an explanation of the Nix files, dependency pinning, CI checks, and local
+validation, see [Maintaining the Nix build](docs/nix.md).
+
 ### Windows:
     ```
     git clone https://github.com/edin45/simple_photogrammetry_gui.git
