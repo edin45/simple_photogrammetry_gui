@@ -68,7 +68,7 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
 
   @override
   Widget build(BuildContext context) {
-    bool running = status != "" && status != "Done" && status != "Failed";
+    bool running = status != "" && status != "Done" && !status.contains("Failed");
 
     return DynamicColorBuilder(builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
       colorScheme = darkDynamic ?? const ColorScheme.dark();
@@ -384,6 +384,7 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                                       onPressed: () async {
                                         stop = true;
                                         status = "Stopping...";
+                                        widget.model.stop(this);
                                         setState(() {});
                                       },
                                       style: ButtonStyle(backgroundColor: MaterialStateProperty.resolveWith((states) {

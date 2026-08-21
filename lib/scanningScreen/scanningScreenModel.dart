@@ -370,6 +370,7 @@ class ScanningScreenModel {
         // await runCommand("\"${openMvsPath}DensifyPointCloud\" --input-file \"$outputPath${slash}temp${slash}model_colmap.mvs\" --working-folder \"$outputPath${slash}temp\" --output-file \"$outputPath${slash}temp${slash}model_dense.mvs\" --max-resolution $maxImgResolution", []);
         if(denseRetrys == 5) {
           view.status = "Failed, went wrong at DensifyPointCloud";
+          //view.running = false;
           view.setState(() {});
           return;
         }
@@ -441,6 +442,7 @@ class ScanningScreenModel {
         
         if(meshReconRetrys == 10) {
           view.status = "Failed, went wrong at Mesh Reconstruction";
+            //view.running = false;
             view.setState(() {});
             return;
         }
@@ -492,6 +494,8 @@ class ScanningScreenModel {
       
       // texrecon --keep_unseen_faces ./project.nvm /workspace/Documents/out_test_2/2/temp/model_surface_test_d12_cleaned.ply /workspace/Documents/out_test_2/model_surface_test_d12_cleaned_textured6
 
+      try{
+
       await runCommand(mvs_texturing, [
           "--keep_unseen_faces",
           "$imagesPath${slash}project.nvm",
@@ -500,11 +504,18 @@ class ScanningScreenModel {
           
         ],workingFolder: "$outputPath${slash}temp${slash}dense${slash}images");
 
+      }catch(_) {
+        
+      }
+
         if(!File("$outputPath${slash}textured.obj").existsSync()) {
           view.status = "Failed, went wrong at texturing mesh";
+          //view.running = false;
           view.setState(() {});
           return;
         }
+
+     
 
       
 
@@ -646,6 +657,22 @@ class ScanningScreenModel {
   // }
 
   stop(var view) {
+          if(Platform.isWindows) {
+            runCommand('taskkill /IM "RefineMesh.exe" /F', []);
+            runCommand('taskkill /IM "TextureMesh.exe" /F', []);
+            runCommand('taskkill /IM "ReconstructMesh.exe" /F', []);
+            runCommand('taskkill /IM "DensifyPointCloud.exe" /F', []);
+            runCommand('taskkill /IM "colmap.exe" /F', []);
+            runCommand('taskkill /IM "reconstructMesh.exe" /F', []);
+            runCommand('taskkill /IM "texrecon.exe" /F', []);
+          }else{
+            runCommand('killall RefineMesh', []);
+            runCommand('killall TextureMesh', []);
+            runCommand('killall ReconstructMesh', []);
+            runCommand('killall DensifyPointCloud', []);
+            runCommand('killall colmap', []);
+            runCommand('killall texrecon', []);
+          }
     view.status = "";
     view.setState(() {});
   }
