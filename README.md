@@ -16,6 +16,42 @@ Lastly, click start. The finished result will be in the output folder with the n
 
 ## Building:
 
+### Windows:
+    ```
+    git clone https://github.com/edin45/simple_photogrammetry_gui.git
+    cd simple_photogrammetry_gui
+    flutter clean
+    flutter pub get
+    flutter build windows --release
+    ```
+
+   then alongside the simple_photogrammetry_gui.exe (in the build/windows/runner/Release folder) put your desired (compiled!) version of openmvs as a zip file called openmvs.zip (zip the contents of the folder not the folder itself, or it will not work).
+   
+   Along with zip files of:
+  
+   - decimateMesh.exe (compiled from python/decimateMesh.py using command: pyinstaller --onefile decimateMesh.py --collect-all pymeshlab)
+   - resizeImages.exe (compiled from python/resizeImages.py using command: pyinstaller --onefile resizeImages.py)
+   - texrecon.exe (is in the folder mvs-texturing)
+
+### Linux (Ubuntu 22.04 Docker):
+
+This is experimental - so it could have issues,
+but if it works it should compile all dependencies, collect them and set them up, and finally package everything into a nice .AppImage
+this should work on pretty much all Linux distros as we create an Ubuntu 22.04 docker & compile in there.
+    
+    ```
+    git clone https://github.com/edin45/simple_photogrammetry_gui.git
+    cd simple_photogrammetry_gui/linux_compilation_scripts_wip
+    docker build -t simple_photogrammetry_gui_box .
+    docker run -it -v $(pwd)/..:/workspace/simple_photogrammetry_gui simple_photogrammetry_gui_box /bin/bash
+    cd /workspace
+    cp simple_photogrammetry_gui/linux_compilation_scripts_wip/compile_dependecies.sh .
+    cp simple_photogrammetry_gui/linux_compilation_scripts_wip/build_appimage.sh .
+    ./compile_dependecies.sh
+    ./build_appimage.sh
+    cp *.AppImage simple_photogrammetry_gui/
+    ```
+
 ### Nix
 
 The Nix build supports x86-64 Linux and provides two variants. Both include the
@@ -65,41 +101,6 @@ checkout.
 
 For an explanation of the Nix files, dependency pinning, CI checks, and local
 validation, see [Maintaining the Nix build](docs/nix.md).
-
-### Windows:
-    ```
-    git clone https://github.com/edin45/simple_photogrammetry_gui.git
-    cd simple_photogrammetry_gui
-    flutter clean
-    flutter pub get
-    flutter build windows --release
-    ```
-
-   then alongside the simple_photogrammetry_gui.exe (in the build/windows/runner/Release folder) put your desired (compiled!) version of openmvs as a zip file called openmvs.zip (zip the contents of the folder not the folder itself, or it will not work).
-   
-   Along with zip files of:
-  
-   - decimateMesh.exe (compiled from python/decimateMesh.py using command: pyinstaller --onefile decimateMesh.py --collect-all pymeshlab)
-   - resizeImages.exe (compiled from python/resizeImages.py using command: pyinstaller --onefile resizeImages.py)
-   - texrecon.exe (is in the folder mvs-texturing)
-
-### Linux:
-
-This is experimental - so it could have issues,
-but if it works it should compile all dependencies, collect them and set them up, and finally package everything into a nice .AppImage
-    
-    ```
-    git clone https://github.com/edin45/simple_photogrammetry_gui.git
-    cd simple_photogrammetry_gui/linux_compilation_scripts_wip
-    docker build -t simple_photogrammetry_gui_box .
-    docker run -it -v $(pwd)/..:/workspace/simple_photogrammetry_gui simple_photogrammetry_gui_box /bin/bash
-    cd /workspace
-    cp simple_photogrammetry_gui/linux_compilation_scripts_wip/compile_dependecies.sh .
-    cp simple_photogrammetry_gui/linux_compilation_scripts_wip/build_appimage.sh .
-    ./compile_dependecies.sh
-    ./build_appimage.sh
-    cp *.AppImage simple_photogrammetry_gui/
-    ```
  
 ## Based on:
 
