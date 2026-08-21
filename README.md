@@ -16,6 +16,56 @@ Lastly, click start. The finished result will be in the output folder with the n
 
 ## Building:
 
+### Nix
+
+The Nix build supports x86-64 Linux and provides two variants. Both include the
+command-line programs used by the reconstruction pipeline.
+
+| Variant | Run in one command | Native dependencies | Host requirement |
+| --- | --- | --- | --- |
+| CUDA | `nix run .#cuda` | CUDA-enabled COLMAP and OpenMVS | An NVIDIA driver compatible with CUDA 12.9 |
+| CPU | `nix run .#cpu` | CPU-only COLMAP and OpenMVS | No NVIDIA driver |
+
+Install a current version of [Nix](https://nixos.org/download/), then run the
+variant that matches the computer. The CPU choice concerns the photogrammetry
+pipeline. Gaussian splatting uses Brush and has its own graphics hardware
+requirements.
+
+To keep a `result` link instead of launching immediately, build a variant and
+run its launcher:
+
+```sh
+nix build .#cuda
+./result/bin/simple_photogrammetry_gui
+```
+
+Replace `cuda` with `cpu` for the CPU package. The unqualified `nix run` and
+`nix build` commands currently select CUDA by default.
+
+To work on the Flutter source, enter a temporary shell containing Flutter and
+the CUDA build libraries. Set the same application mode used by the CUDA
+package when launching the unwrapped application:
+
+```sh
+nix develop
+SIMPLE_PHOTOGRAMMETRY_GPU_TYPE=cuda flutter run -d linux
+```
+
+To load the development shell automatically, install
+[direnv](https://direnv.net/docs/installation.html), add its hook to your shell,
+review `.envrc`, and approve it once:
+
+```sh
+direnv allow
+```
+
+`.envrc` contains only `use flake`, so it loads the same pinned tools as
+`nix develop`. Direnv requires approval because `.envrc` is shell code from the
+checkout.
+
+For an explanation of the Nix files, dependency pinning, CI checks, and local
+validation, see [Maintaining the Nix build](docs/nix.md).
+
 ### Windows:
     ```
     git clone https://github.com/edin45/simple_photogrammetry_gui.git

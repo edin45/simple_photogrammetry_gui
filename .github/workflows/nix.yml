@@ -1,0 +1,52 @@
+name: Nix
+
+on:
+  # Check proposed changes before they are merged.
+  pull_request:
+
+  # Check the result after a pull request is merged and after a direct push.
+  push:
+    branches: [master]
+
+  # flake.lock freezes the Nix packages, but it cannot freeze the surrounding
+  # GitHub service. The runner image, Nix installer, and actions' major-version
+  # tags can change. A weekly run checks that this CI path still works when no
+  # commit has started another check. It does not update nixpkgs, bypass Nix's
+  # caches, or test every original source URL.
+  #
+  # This means 05:17 UTC every Monday. The non-zero minute avoids the busiest
+  # scheduling time at the start of an hour. GitHub assigns notifications for
+  # scheduled runs to the user who last changed this cron line. That user must
+  # enable Actions notifications in their GitHub settings to receive them.
+  schedule:
+    - cron: "17 5 * * 1"
+
+  # This button in the Actions page lets a maintainer repeat the check after a
+  # GitHub outage or while investigating a failure, without making a commit.
+  workflow_dispatch:
+
+# The job only needs to read the repository. Keeping this explicit prevents a
+# future change to GitHub's default token permissions from granting write access.
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build CPU and CUDA packages
+    runs-on: ubuntu-latest
+    steps:
+      # A job starts in a temporary, empty virtual machine. This copies the
+      # repository into it so the following steps can read the Nix files.
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      # GitHub's Ubuntu image does not include Nix. This maintained action
+      # installs it and enables flakes for the command below. Major-version
+      # action tags may receive updates, which is one reason for the weekly run.
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      # flake.nix maps this check to both application variants, so this
+      # evaluates the flake and builds the CPU and CUDA dependency closures.
+      - name: Check and build the Nix packages
+        run: nix flake check --print-build-logs
