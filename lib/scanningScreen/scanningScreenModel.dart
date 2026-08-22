@@ -8,6 +8,7 @@ import 'package:isolate_current_directory/isolate_current_directory.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple_photogrammetry_gui/main.dart';
 import 'package:simple_photogrammetry_gui/runCommand.dart';
+import 'package:simple_photogrammetry_gui/utils/downscaleImages.dart';
 import 'package:simple_photogrammetry_gui/utils/getMemoryUsage.dart';
 // import 'package:system_info2/system_info2.dart';
 import 'package:path/path.dart' as p;
@@ -103,6 +104,28 @@ class ScanningScreenModel {
         stop(view);
         return;
       }
+
+      List maximagesizes = [-1, 3000, 2000];
+
+      if(maximagesizes[qualityLevel] != -1) {
+
+        view.status = "0/$totalStepNumber Copy & Resize Images";
+        view.setState(() {});
+
+        final resizedImagePath = "$outputPath${slash}temp${slash}images_scaled";
+
+        await Directory(
+        resizedImagePath,
+      ).create(recursive: true);
+    
+        // Wait for the background downscaling to finish
+        await downscaleImages(imagesPath, resizedImagePath, maximagesizes[qualityLevel]);
+        
+        
+        imagesPath = resizedImagePath;
+
+      }
+
 
       final model_colmap_file = File("$outputPath${slash}temp${slash}model_colmap.mvs");
     
@@ -223,7 +246,7 @@ class ScanningScreenModel {
         view.status = "4/$totalStepNumber Undistorting Images";
         view.setState(() {});
 
-        List maximagesizes = [-1, 3000, 2000];
+        
 
         await runCommand(colmapPath, [
           "image_undistorter",
@@ -236,7 +259,7 @@ class ScanningScreenModel {
 
           "--output_type", "COLMAP",
           
-          "--max_image_size", maximagesizes[qualityLevel].toString()
+          // "--max_image_size", maximagesizes[qualityLevel].toString()
           
         ]);
 

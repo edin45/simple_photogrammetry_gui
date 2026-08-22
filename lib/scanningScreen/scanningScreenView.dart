@@ -13,6 +13,7 @@ import 'package:roundcheckbox/roundcheckbox.dart';
 import 'package:simple_photogrammetry_gui/TitleBar/TitleBar.dart';
 import 'package:simple_photogrammetry_gui/main.dart';
 import 'package:simple_photogrammetry_gui/runCommand.dart';
+import 'package:simple_photogrammetry_gui/utils/checkForUpdate.dart';
 import 'package:simple_photogrammetry_gui/utils/getMemoryUsage.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:hexcolor/hexcolor.dart';
@@ -57,6 +58,47 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
         
     //   });
     // });
+
+    checkForUpdates(currentVersionTag).then((newVersion) {
+      if (newVersion != null) {
+        
+                              var alert = AlertDialog(
+                                backgroundColor: HexColor("#282828"),
+                                title: Text(
+                                  "A New Version is Available",
+                                  style: TextStyle(color: HexColor("#ebdbb2")),
+                                ),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    linkWidget("Download Here: https://github.com/edin45/simple_photogrammetry_gui/releases/latest", "https://github.com/edin45/simple_photogrammetry_gui/releases/latest"),
+                                    // linkWidget("2. OpenMVS", "https://github.com/cdcseacave/openMVS"),
+                                    // linkWidget("3. mvs-texturing", "https://github.com/nmoehrle/mvs-texturing"),
+                                    // linkWidget("4. pymeshlab", "https://github.com/cnr-isti-vclab/PyMeshLab"),
+                                    // linkWidget("5. brush", "https://github.com/ArthurBrussee/brush"),
+                                    // linkWidget("6. PoissonRecon", "https://github.com/mkazhdan/PoissonRecon"),
+                                    Padding(padding: EdgeInsets.all(8)),
+                                    TextButton(
+                                            onPressed: () async {
+
+                                              Navigator.pop(context);
+
+                                              // photogrammetry_or_splat = true;
+                                              
+                                              // setState(() {});
+
+                                            },
+                                            child: Text(
+                                              "Later",
+                                              style: TextStyle(color: HexColor("#ebdbb2"), fontSize: 18),
+                                            ))
+                                  ],
+                                ),
+                              );
+                              showDialog(context: context, builder: (_) => alert);
+                            
+      }
+    });
 
     asyncTasks() async {
       hasAllDependencies = await widget.model.checkDependencies(this);

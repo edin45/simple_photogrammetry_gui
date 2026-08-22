@@ -18,6 +18,7 @@ String decimationArgs = "-t 1";
 String meshingExtraFlags =
     "--target-face-num 0 --crop-to-roi 1 --roi-border 10";
 String meshing_type = "poissonrecon";
+String currentVersionTag = "V1.1.5";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
