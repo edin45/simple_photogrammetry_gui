@@ -1,17 +1,13 @@
-import 'dart:async';
 import 'dart:io';
 import 'package:hexcolor/hexcolor.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:flutter/material.dart';
-import 'package:isolate_current_directory/isolate_current_directory.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple_photogrammetry_gui/main.dart';
 import 'package:simple_photogrammetry_gui/runCommand.dart';
-import 'package:simple_photogrammetry_gui/utils/downscaleImages.dart';
-import 'package:simple_photogrammetry_gui/utils/getMemoryUsage.dart';
-// import 'package:system_info2/system_info2.dart';
 import 'package:path/path.dart' as p;
+import 'dart:math';
 
 class ScanningScreenModel {
 
@@ -79,6 +75,7 @@ class ScanningScreenModel {
       String PoissonRecon = Platform.isWindows ? '$directory${slash}PoissonRecon.exe' : '$appDir/PoissonRecon';
       String SurfaceTrimmer = Platform.isWindows ? '$directory${slash}SurfaceTrimmer.exe' : '$appDir/SurfaceTrimmer';
       String mvs_texturing = Platform.isWindows ? '$directory${slash}texrecon${slash}texrecon.exe' : '$appDir/texrecon';
+      String fast_downscaler = Platform.isWindows ? '$directory${slash}fast_downscaler${slash}fast_downscaler.exe' : '$appDir/fast_downscaler';
       
       
       
@@ -114,12 +111,20 @@ class ScanningScreenModel {
 
         final resizedImagePath = "$outputPath${slash}temp${slash}images_scaled";
 
+        int threads = max(1, Platform.numberOfProcessors - 1);
+
         await Directory(
         resizedImagePath,
       ).create(recursive: true);
     
-        // Wait for the background downscaling to finish
-        await downscaleImages(imagesPath, resizedImagePath, maximagesizes[qualityLevel]);
+        
+
+        await runCommand(fast_downscaler, [
+          imagesPath,
+          resizedImagePath,
+          maximagesizes[qualityLevel],
+          threads.toString()
+        ]);
         
         
         imagesPath = resizedImagePath;
@@ -718,11 +723,12 @@ class ScanningScreenModel {
       bool hasTextureMesh = await File("$directory${slash}textureMesh.exe").exists();
       bool hasPoissonRecon = await File("$directory${slash}PoissonRecon.exe").exists();
       bool hasSurfaceTrimmer = await File("$directory${slash}SurfaceTrimmer.exe").exists();
+      bool fast_downscaler = await File("$directory${slash}fast_downscaler.exe").exists();
       bool hasBrush = await File('$directory${slash}brush${slash}brush_app.exe').exists();
       
       // bool hasTexRecon = await File("$directory${slash}SurfaceTrimmer.exe").exists();
 
-      hasAllDependencies = hasColmap && hasOpenMVS && hasTexRecon && hasResizeImages && hasDecimateMesh && hasTextureMesh && hasPoissonRecon && hasSurfaceTrimmer && hasBrush;
+      hasAllDependencies = hasColmap && hasOpenMVS && hasTexRecon && hasResizeImages && hasDecimateMesh && hasTextureMesh && hasPoissonRecon && hasSurfaceTrimmer && hasBrush && fast_downscaler;
     }
     else if (Platform.isLinux) {
 
@@ -902,6 +908,8 @@ class ScanningScreenModel {
       await runCommand('powershell -c "Expand-Archive -Path ./texrecon.zip -DestinationPath \'$directory\'"', []);
 
       await runCommand('powershell -c "Expand-Archive -Path ./PoissonRecon.zip -DestinationPath \'$directory\'"', []);
+
+      await runCommand('powershell -c "Expand-Archive -Path ./fast_downscaler.zip -DestinationPath \'$directory\'"', []);
 
       await runCommand('powershell -c "Rename-Item -Path \'$directory${slash}colmap${slash}${cuda ? 'colmap-x64-windows-cuda' : 'colmap-x64-windows-nocuda'}\' -NewName \'$directory${slash}colmap${slash}colmap\'"', []);
 
