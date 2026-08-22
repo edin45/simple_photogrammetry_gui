@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/fast_downscaler.dir/main.cpp.o -o fast_downscaler 

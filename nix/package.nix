@@ -18,6 +18,7 @@
   rayintSource,
   mveSource,
   poissonReconSource,
+  fastDownscaler,
 }:
 
 let
@@ -79,6 +80,8 @@ flutter344.buildFlutterApplication (finalAttrs: {
     ln -s ${lib.getExe mvs-texturing} "$out/usr/bin/texrecon"
     ln -s ${poisson-recon}/bin/PoissonRecon "$out/usr/bin/PoissonRecon"
     ln -s ${poisson-recon}/bin/SurfaceTrimmer "$out/usr/bin/SurfaceTrimmer"
+
+    ln -s ${lib.getExe fastDownscaler} "$out/usr/bin/fast_downscaler"
 
     for program in InterfaceCOLMAP DensifyPointCloud ReconstructMesh; do
       ln -s "${openmvsPackage}/bin/$program" "$out/usr/bin/OpenMVS/$program"

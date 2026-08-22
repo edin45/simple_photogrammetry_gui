@@ -1,3 +1,0 @@
-/workspace/smpg_2/simple_photogrammetry_gui/CPP/ImageDownscaler/build/CMakeFiles/fast_downscaler.dir
-/workspace/smpg_2/simple_photogrammetry_gui/CPP/ImageDownscaler/build/CMakeFiles/edit_cache.dir
-/workspace/smpg_2/simple_photogrammetry_gui/CPP/ImageDownscaler/build/CMakeFiles/rebuild_cache.dir

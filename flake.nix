@@ -71,6 +71,24 @@
         inherit cudaCapabilities;
       };
 
+      # Add fast_downscaler - a simple tool built in CPP that scales down the images,
+      # before they are fed into the 3d scanning pipeline
+
+      fastDownscaler = pkgs.stdenv.mkDerivation {
+        pname = "fast_downscaler";
+        version = "1.0.0";
+        src = ./CPP/ImageDownscaler; 
+
+        nativeBuildInputs = [ pkgs.cmake ];
+
+        # Nix automatically runs cmake and make. We just need to tell it 
+        # where to put the finished binary.
+        installPhase = ''
+          mkdir -p $out/bin
+          cp fast_downscaler $out/bin/
+        '';
+      };
+
       # The package assembly is shared, while each adapter supplies matching
       # application policy and native dependencies at this seam.
       mkSimplePhotogrammetryGui =

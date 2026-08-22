@@ -122,7 +122,7 @@ class ScanningScreenModel {
         await runCommand(fast_downscaler, [
           imagesPath,
           resizedImagePath,
-          maximagesizes[qualityLevel],
+          maximagesizes[qualityLevel].toString(),
           threads.toString()
         ]);
         
