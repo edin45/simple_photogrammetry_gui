@@ -109,6 +109,7 @@
             rayintSource
             mveSource
             poissonReconSource
+            fastDownscaler
             ;
         };
 
