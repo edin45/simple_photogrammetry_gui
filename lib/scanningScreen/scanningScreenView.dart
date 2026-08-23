@@ -15,6 +15,7 @@ import 'package:simple_photogrammetry_gui/main.dart';
 import 'package:simple_photogrammetry_gui/runCommand.dart';
 import 'package:simple_photogrammetry_gui/utils/checkForUpdate.dart';
 import 'package:simple_photogrammetry_gui/utils/getMemoryUsage.dart';
+import 'package:simple_photogrammetry_gui/videoFrameExtractor/videoFrameExtractorWidget.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:hexcolor/hexcolor.dart';
 
@@ -290,6 +291,13 @@ class _ScanningScreenViewState extends State<ScanningScreenView> {
                               )
                             ],
                           ),*/
+                          const Padding(padding: EdgeInsets.all(10.0)),
+                          VideoFrameExtractorWidget(
+                            onFramesReady: (imageDirectory) {
+                              imageFolder = imageDirectory;
+                              setState(() {});
+                            },
+                          ),
                           const Padding(padding: EdgeInsets.all(10.0)),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
