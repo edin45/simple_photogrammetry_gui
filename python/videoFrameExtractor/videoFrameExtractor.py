@@ -134,7 +134,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Select clear, diverse photogrammetry frames from a video")
     parser.add_argument("video", type=Path)
     parser.add_argument("output", type=Path)
-    parser.add_argument("--frames-per-second", type=int, default=3, choices=range(1, 4))
+    parser.add_argument("--frames-per-second", type=int, default=3, choices=(3, 4))
     return parser.parse_args()
 
 

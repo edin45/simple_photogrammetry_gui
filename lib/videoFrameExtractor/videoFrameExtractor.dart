@@ -38,6 +38,7 @@ class VideoFrameExtractor {
   Future<VideoFrameExtractionResult> extract({
     required String videoPath,
     required String outputDirectory,
+    required int framesPerSecond,
     required void Function(VideoFrameExtractionProgress progress) onProgress,
   }) async {
     final command = await _findCommand();
@@ -46,7 +47,7 @@ class VideoFrameExtractor {
       videoPath,
       outputDirectory,
       '--frames-per-second',
-      '3',
+      framesPerSecond.toString(),
     ]);
     _process = process;
 

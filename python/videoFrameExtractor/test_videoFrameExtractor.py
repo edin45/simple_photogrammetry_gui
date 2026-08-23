@@ -48,6 +48,32 @@ class VideoFrameExtractorTest(unittest.TestCase):
             self.assertLessEqual(len(images), 6)
             self.assertTrue(all(cv2.imread(str(image)) is not None for image in images))
 
+    def test_extracts_up_to_four_clear_frames_per_second(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_path = Path(temporary_directory)
+            video_path = temporary_path / "capture.avi"
+            output_path = temporary_path / "frames"
+            output_path.mkdir()
+
+            writer = cv2.VideoWriter(
+                str(video_path),
+                cv2.VideoWriter_fourcc(*"MJPG"),
+                30,
+                (320, 240),
+            )
+            self.assertTrue(writer.isOpened())
+            random = np.random.default_rng(84)
+            base = random.integers(0, 256, (240, 320, 3), dtype=np.uint8)
+            for frame_index in range(30):
+                writer.write(np.roll(base, frame_index * 3, axis=1))
+            writer.release()
+
+            extract_frames(video_path, output_path, 4)
+
+            images = sorted(output_path.glob("*.jpg"))
+            self.assertGreaterEqual(len(images), 3)
+            self.assertLessEqual(len(images), 4)
+
 
 if __name__ == "__main__":
     unittest.main()

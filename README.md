@@ -16,7 +16,7 @@ Lastly, click start. The finished result will be in the output folder with the n
 
 ### Importing a video
 
-Click **Select Video**, choose a capture, and then choose where the extracted image folder should be created. The importer analyses every frame at the video's original frame rate and selects up to three clear, visually different frames from each second. Progress is shown in the application. When extraction finishes, the generated folder is automatically selected as the image folder so the normal reconstruction workflow can continue.
+Click **Select Video**, choose whether to save three or four clear images per second, choose a capture, and then choose where the extracted image folder should be created. The importer analyses every frame at the video's original frame rate and selects the requested number of clear, visually different frames from each second. Progress is shown in the application. When extraction finishes, the generated folder is automatically selected as the image folder so the normal reconstruction workflow can continue.
 
 For best results, record a slow, steady pass around the object with even lighting. Make passes at low, middle, and high camera angles while keeping the object in view.
 

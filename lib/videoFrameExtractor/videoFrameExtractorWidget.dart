@@ -22,6 +22,7 @@ class _VideoFrameExtractorWidgetState extends State<VideoFrameExtractorWidget> {
   int processedFrames = 0;
   int totalFrames = 0;
   int savedFrames = 0;
+  int framesPerSecond = 3;
   bool isExtracting = false;
   bool wasCancelled = false;
   String selectedVideo = '';
@@ -77,6 +78,7 @@ class _VideoFrameExtractorWidgetState extends State<VideoFrameExtractorWidget> {
       final result = await extractor.extract(
         videoPath: video.path,
         outputDirectory: outputDirectory,
+        framesPerSecond: framesPerSecond,
         onProgress: (update) {
           if (!mounted) {
             return;
@@ -129,6 +131,35 @@ class _VideoFrameExtractorWidgetState extends State<VideoFrameExtractorWidget> {
             'Select Video',
             style: TextStyle(color: HexColor('#282828')),
           ),
+        ),
+        const Padding(padding: EdgeInsets.all(4)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Clear images per second:',
+              style: TextStyle(color: HexColor('#ebdbb2')),
+            ),
+            const Padding(padding: EdgeInsets.all(5)),
+            DropdownButton<int>(
+              value: framesPerSecond,
+              dropdownColor: HexColor('#3c3836'),
+              style: TextStyle(color: HexColor('#ebdbb2')),
+              items: const [
+                DropdownMenuItem(value: 3, child: Text('3')),
+                DropdownMenuItem(value: 4, child: Text('4')),
+              ],
+              onChanged: isExtracting
+                  ? null
+                  : (value) {
+                      if (value != null) {
+                        setState(() {
+                          framesPerSecond = value;
+                        });
+                      }
+                    },
+            ),
+          ],
         ),
         if (isExtracting) ...[
           const Padding(padding: EdgeInsets.all(4)),
