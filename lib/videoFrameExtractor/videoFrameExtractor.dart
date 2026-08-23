@@ -109,8 +109,8 @@ class VideoFrameExtractor {
     final candidates = [
       if (executableDirectory != null)
         path.join(executableDirectory!, executableName),
-      path.join(applicationSupport.path, executableName),
       path.join(File(Platform.resolvedExecutable).parent.path, executableName),
+      path.join(applicationSupport.path, executableName),
     ];
     for (final candidate in candidates) {
       if (await File(candidate).exists()) {
