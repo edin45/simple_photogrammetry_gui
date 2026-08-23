@@ -33,6 +33,8 @@ migrate_working_dir/
 /build/
 /result
 /.direnv/
+/python/videoFrameExtractor/build/
+/python/videoFrameExtractor/dist/
 
 # Symbolication related
 app.*.symbols
