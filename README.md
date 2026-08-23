@@ -14,6 +14,12 @@ Aftewards click **Select Output Folder** to select the folder where the result s
 
 Lastly, click start. The finished result will be in the output folder with the name: **textured.obj**
 
+### Importing a video
+
+Click **Select Video**, choose a capture, and then choose where the extracted image folder should be created. The importer analyses every frame at the video's original frame rate and selects up to three clear, visually different frames from each second. Progress is shown in the application. When extraction finishes, the generated folder is automatically selected as the image folder so the normal reconstruction workflow can continue.
+
+For best results, record a slow, steady pass around the object with even lighting. Make passes at low, middle, and high camera angles while keeping the object in view.
+
 ## Building:
 
 ### Windows:
@@ -32,6 +38,15 @@ Lastly, click start. The finished result will be in the output folder with the n
    - decimateMesh.exe (compiled from python/decimateMesh.py using command: pyinstaller --onefile decimateMesh.py --collect-all pymeshlab)
    - resizeImages.exe (compiled from python/resizeImages.py using command: pyinstaller --onefile resizeImages.py)
    - texrecon.exe (is in the folder mvs-texturing)
+   - videoFrameExtractor.exe (compiled with `cd python/videoFrameExtractor` then `pyinstaller videoFrameExtractor.spec`)
+
+The video helper can also be developed independently:
+
+```powershell
+cd python/videoFrameExtractor
+py -m pip install -r requirements.txt
+py videoFrameExtractor.py input.mp4 extracted_frames
+```
 
 ### Linux (Ubuntu 22.04 Docker):
 
